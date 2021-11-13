@@ -1,3 +1,4 @@
+import flask
 from flask import Flask
 from flask import jsonify, json
 from flask import Response
@@ -8,30 +9,31 @@ from firebase_admin import credentials
 from firebase_admin import auth
 from firebase_admin import exceptions
 from firebase_admin import tenant_mgt
-from firebase_admin import firestore
 
 import traceback
 import logging
 from logging.handlers import TimedRotatingFileHandler
+import datetime
 
 # format the log entries
 formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s')
 
-handler = TimedRotatingFileHandler('authentication.log', when='midnight',backupCount=10)
+# TimeRotatingHandler to auto save log file with the date
+handler = TimedRotatingFileHandler('Logs/authentication.log', when='midnight',backupCount=20)
 handler.setFormatter(formatter)
 logger = logging.getLogger(__name__)
 logger.addHandler(handler)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 app = Flask(__name__)
+# Firebase service account key file
 cred = credentials.Certificate('serviceAccountKey.json')
 default_app = firebase_admin.initialize_app(cred)
-db = firestore.client()
 
 @app.route('/testapi', methods=['GET','POST'])
 def test_api():
-    return jsonify([{'message':"1234", "statusCode":200}])
+    return jsonify([{'message':"Test Check", "statusCode":200}])
 
 ## Verify the user id
 @app.route('/adminLogin', methods=['POST'])
@@ -42,16 +44,64 @@ def verify_token_uid():
         # id_token comes from the client app (shown above)
         decoded_token = auth.verify_id_token(authRequestData['idToken'])
         uid = decoded_token['uid']
-
         # [END verify_token_uid]
+
         logger.info("User was successfully authenticated %s" %(uid))
         return jsonify([{'message':"Successfully authenticated user", "statusCode":200}])
+    
+    except auth.RevokedIdTokenError:
+        # Token revoked, inform the user to reauthenticate or signOut().
+        logger.exception("Token revoked, inform the user to reauthenticate or signOut().")
+        return jsonify([{"message":"Token revoked, Please reauthenticate or signOut()","statusCode":400}])
+        pass
+
+    except auth.UserDisabledError:
+        # Token belongs to a disabled user record.
+        logger.exception("Token belongs to a disabled user record")
+        logger.exception(traceback.format_exc())
+        return jsonify([{"message":"Your accout is disabled. Please contact support","statusCode":400}])
+        pass
+
+    except auth.InvalidIdTokenError:
+        # Token is invalid
+        logger.exception("Token is invalid")
+        logger.exception(traceback.format_exc())
+        return jsonify([{"message":"Invalid token, please SignOut and try again","statusCode":400}])
+        pass
 
     except Exception as e:
-        logger.error("Wasn't able to Authenticate User  %s" %(uid))
-        logger.error(traceback.format_exc())
+        logger.info("Wasn't able to authenticate User")
+        logger.exception(traceback.format_exc())
+        print(traceback.format_exc())
         return jsonify([{"message":"Failed to authenticate","statusCode":400}])
-        
+
+
+# Sesssion Cookies for all api authentication
+session_cookie_expires_in = datetime.timedelta(days=7)
+@app.route('/sessionLogin', methods=['POST'])
+def session_login():
+    # Get the ID token sent by the client
+    id_token = request.json['idToken']
+    # Set session expiration to 5 days.
+    try:
+        # Create the session cookie. This will also verify the ID token in the process.
+        # The session cookie will have the same claims as the ID token.
+        session_cookie = auth.create_session_cookie(id_token, expires_in=session_cookie_expires_in)
+        response = jsonify({'message': 'Successfully authenticated user','statusCode':200})
+        # Set cookie policy for session cookie.
+        expires = datetime.datetime.now() + session_cookie_expires_in
+        response.set_cookie('session', session_cookie, expires=expires)
+        logger.info("User was successfully authenticated & cookies were generated")
+        return response
+    except exceptions.FirebaseError:
+        return flask.abort(401, 'Failed to create a session cookie')
+        pass
+    except Exception as e:
+        logger.info("Wasn't able to authenticate user and failed to create a session cookie")
+        logger.exception(traceback.format_exc())
+        print(traceback.format_exc())
+        return flask.abort(401, 'Failed to create a session cookie')
+        #return jsonify([{"message":"Failed to authenticate","statusCode":400}])
 
 if __name__ == '__main__':
     app.run(debug=True)
