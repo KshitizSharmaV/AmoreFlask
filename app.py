@@ -1,4 +1,5 @@
 import flask
+import os
 from flask import Flask
 from flask import jsonify, json
 from flask import Response
@@ -19,6 +20,8 @@ import datetime
 formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s')
 
 # TimeRotatingHandler to auto save log file with the date
+if not os.path.exists("Logs/"):
+    os.makedirs("Logs/")
 handler = TimedRotatingFileHandler('Logs/authentication.log', when='midnight',backupCount=20)
 handler.setFormatter(formatter)
 logger = logging.getLogger(__name__)
@@ -102,6 +105,27 @@ def session_login():
         print(traceback.format_exc())
         return flask.abort(401, 'Failed to create a session cookie')
         #return jsonify([{"message":"Failed to authenticate","statusCode":400}])
+
+
+def fetch_profiles():
+    """
+    :accepts:
+    - n =  no. of profiles
+    - radius = radius of search
+    - current location of user
+    - id token
+    :process:
+    - verify id token
+    - get all users uid (Will be refined for querying within a particular radius)
+    - filter and sort based on Recommendation Engine
+    - eliminate user uids present in current user's Likes and Dislikes
+    - pick n top uids from rest of the uids
+    :return:
+    - array of n uids
+    """
+    return
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
