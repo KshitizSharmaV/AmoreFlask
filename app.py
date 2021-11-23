@@ -10,6 +10,7 @@ from firebase_admin import credentials
 from firebase_admin import auth
 from firebase_admin import exceptions
 from firebase_admin import tenant_mgt
+from firebase_admin import firestore
 
 import traceback
 import logging
@@ -33,6 +34,8 @@ app = Flask(__name__)
 # Firebase service account key file
 cred = credentials.Certificate('serviceAccountKey.json')
 default_app = firebase_admin.initialize_app(cred)
+# Instance of firestore database
+db = firestore.client()
 
 @app.route('/testapi', methods=['GET','POST'])
 def test_api():
@@ -106,7 +109,7 @@ def session_login():
         return flask.abort(401, 'Failed to create a session cookie')
         #return jsonify([{"message":"Failed to authenticate","statusCode":400}])
 
-
+@app.route('/fetchprofiles', methods=['POST'])
 def fetch_profiles():
     """
     :accepts:
@@ -123,6 +126,31 @@ def fetch_profiles():
     :return:
     - array of n uids
     """
+    session_cookie = flask.request.cookies.get('session')
+    
+    if not session_cookie:
+        # Session cookie is unavailable. Force user to login.
+        return flask.redirect('/login')
+
+    # Verify the session cookie. In this case an additional check is added to detect
+    # if the user's Firebase session was revoked, user deleted/disabled, etc.
+    try:
+        decoded_claims = auth.verify_session_cookie(session_cookie, check_revoked=True)
+        profile_ref = db.collection(u'Profiles')
+        docs = profile_ref.stream()
+        profilesArray = []
+        for doc in docs:
+            doctemp = doc.to_dict()
+            doctemp["id"] = doc.id
+            profilesArray.append(doctemp)
+        print(profilesArray)
+        print(jsonify(profilesArray))
+        # return jsonify([doc for doc in docs])
+        return jsonify(profilesArray)
+    except auth.InvalidSessionCookieError:
+        # Session cookie is invalid, expired or revoked. Force user to login.
+        return flask.redirect('/login')
+
     return
 
 
