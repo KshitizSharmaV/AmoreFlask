@@ -113,8 +113,37 @@ def fetch_profiles():
     # if the user's Firebase session was revoked, user deleted/disabled, etc.
     try:
         decoded_claims = auth.verify_session_cookie(session_cookie, check_revoked=True)
-        profilesResponse = fetchProfilesObj.getProfiles(decoded_claims['user_id'])
-        return profilesResponse
+        profilesArray = fetchProfilesObj.getProfiles(userId=decoded_claims['user_id'])
+        return jsonify(profilesArray)
+    except auth.InvalidSessionCookieError:
+        logger.info("Failed to authenticate in fetch_profiles, not a valid session cookie")
+        logger.exception(traceback.format_exc())
+        # Session cookie is invalid, expired or revoked. Force user to login.
+        return flask.abort(401, 'Failed to authenticate, not a valid session cookie')
+    return flask.abort(400, 'An error occured in API')
+
+
+
+# fetch_likes_given is used to get profiles which are super liked by the user
+@app.route('/fetchlikesgiven', methods=['POST'])
+def fetch_likes_given():
+    """
+    :accepts:
+    just the reponse cookie and we decode the user id then get profiles superliked by the user
+    """
+    session_cookie = flask.request.cookies.get('session')
+    if not session_cookie:
+        # Session cookie is unavailable. Force user to login.
+        logger.info("Failed to authenticate in fetch_profiles, no session cookie found")
+        logger.exception(traceback.format_exc())
+        return flask.abort(401, 'No session cookie available')
+    # Verify the session cookie. In this case an additional check is added to detect
+    # if the user's Firebase session was revoked, user deleted/disabled, etc.
+    try:
+        decoded_claims = auth.verify_session_cookie(session_cookie, check_revoked=True)
+        superLikedIdsList = fetchProfilesObj.superLikedProfilesByUser(userId = decoded_claims['user_id'])
+        profilesArray = fetchProfilesObj.getProfilesForListOfIds(listofIds=superLikedIdsList)
+        return jsonify(profilesArray)
     except auth.InvalidSessionCookieError:
         logger.info("Failed to authenticate in fetch_profiles, not a valid session cookie")
         logger.exception(traceback.format_exc())
