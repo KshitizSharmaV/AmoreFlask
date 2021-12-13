@@ -1,6 +1,6 @@
 from flask import jsonify, json
 
-# Recommendation system 
+# Profiles Fetcher
 # This will get the profiles for the swipe views 
 class FetchProfiles(object):
     
@@ -22,7 +22,20 @@ class FetchProfiles(object):
         self.logger.info("Successfully sent back profiles for card swipe view")
         return jsonify(profilesArray)
 
+    '''
+    2. Send user card deck list from client and set(idsAlreadySeenByUser+inDeck)
+    3. Caching - to be investigated further - Basic functionality functioning before - new cache for every server?
+    '''
+
+    # Caching ? - Next Stage
     def profilesAlreadySeenByUser(self, userId=None):
+        idsAlreadySeenByUser = []
+        collection_ref = self.db.collection('LikesDislikes').document(userId).collections()
+        for collection in collection_ref:
+            for doc in collection.stream():
+                idsAlreadySeenByUser.append(doc.to_dict()['id'])
+        return idsAlreadySeenByUser
+
         idsAlreadySeenByUser = (self.likedProfilesByUser(userId=userId) + 
                             self.superLikedProfilesByUser(userId=userId) + 
                             self.dislikedProfilesByUser(userId=userId))
@@ -45,6 +58,11 @@ class FetchProfiles(object):
 
     def profilesWhoLikedUser(self):
         pass
+    
+    # Cached
+    def superElitePicks(self):
+        pass
+
 
     def getProfileIds(self, collectionName=None, userId=None, collectionNameChild=None):
         collection_ref = self.db.collection(collectionName)
