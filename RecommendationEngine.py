@@ -10,6 +10,7 @@ from flask import jsonify, json
         c. Query from General Principles DB
         d. Curious/Crazy Questions
         e. Likes, Disliked and SuperLikes are part of recommendation system
+        f. radius of the user
     2. General Principles it should work on?
         a. Profile with high score and more complete profiles will be priortized over profiles with no data
         b. This will have a score and a collection where profiles are listed by scores
@@ -49,8 +50,6 @@ from flask import jsonify, json
     Recommmendation System * Main
     SuperLiked By
     '''
-
-employeeArray.map({ (employee: Employee) -> Int in employee.id})
 
 class RecommendationEngine(object):
 
