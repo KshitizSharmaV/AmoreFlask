@@ -13,6 +13,10 @@ from flask import jsonify, json
     2. General Principles it should work on?
         a. Profile with high score and more complete profiles will be priortized over profiles with no data
         b. This will have a score and a collection where profiles are listed by scores
+        c. User Active 
+        d. How many times user has been reported.. 
+        e. What's the profile completeion score 
+        f. Likes, Dislikes received.
 
     Analysis - Scoring?
         a. the profiles we show have to be good - they are A+
@@ -46,6 +50,7 @@ from flask import jsonify, json
     SuperLiked By
     '''
 
+employeeArray.map({ (employee: Employee) -> Int in employee.id})
 
 class RecommendationEngine(object):
 

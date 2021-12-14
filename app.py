@@ -113,7 +113,8 @@ def fetch_profiles():
     # if the user's Firebase session was revoked, user deleted/disabled, etc.
     try:
         decoded_claims = auth.verify_session_cookie(session_cookie, check_revoked=True)
-        profilesArray = fetchProfilesObj.getProfiles(userId=decoded_claims['user_id'])
+        profilesArray = fetchProfilesObj.getProfiles(userId=decoded_claims['user_id'],
+                                                    idsAlreadyInDeck= request.json["idsAlreadyInDeck"])
         return jsonify(profilesArray)
     except auth.InvalidSessionCookieError:
         logger.info("Failed to authenticate in fetch_profiles, not a valid session cookie")
