@@ -1,13 +1,12 @@
 # Profiles Fetcher
 # This will get the profiles for the swipe views 
+from FirestoreConf import db, async_db
+from LoggerConf import logger
+
 class FetchProfiles(object):
-    
-    def __init__(self, db, logger):
-        self.db = db
-        self.logger = logger
 
     def getProfiles(self, userId=None):
-        profile_ref = self.db.collection(u'Profiles')
+        profile_ref = db.collection(u'Profiles')
         docs = profile_ref.stream()
         # List of ids already seen by user
         idsAlreadySeenByUser = self.profilesAlreadySeenByUser(userId=userId)
@@ -17,7 +16,7 @@ class FetchProfiles(object):
             if doc.id not in idsAlreadySeenByUser:
                 doctemp["id"] = doc.id # un-comment for production
                 profilesArray.append(doctemp)
-        self.logger.info("Successfully sent back profiles for card swipe view")
+        logger.info("Successfully sent back profiles for card swipe view")
         return profilesArray
 
     '''
@@ -28,7 +27,7 @@ class FetchProfiles(object):
     # Caching ? - Next Stage
     def profilesAlreadySeenByUser(self, userId=None):
         idsAlreadySeenByUser = []
-        collection_ref = self.db.collection('LikesDislikes').document(userId).collections()
+        collection_ref = db.collection('LikesDislikes').document(userId).collections()
         for collection in collection_ref:
             for doc in collection.stream():
                 idsAlreadySeenByUser.append(doc.to_dict()['id'])
@@ -52,10 +51,24 @@ class FetchProfiles(object):
                             userId=userId,
                             collectionNameChild=u'Dislikes')
 
-    # All Profiles who liked the user
-    def profilesWhoLikedUser(self):
-        pass
+    # All Profiles which liked the user
+    def profiles_which_liked_user(self, userId=None):
+        return self.getProfileIds(collectionName=u'LikesDislikes',
+                            userId=userId,
+                            collectionNameChild=u'LikedBy')
     
+    # All Profiles which superliked the user
+    def profiles_which_superliked_user(self, userId=None):
+        return self.getProfileIds(collectionName=u'LikesDislikes',
+                            userId=userId,
+                            collectionNameChild=u'SuperlikedBy')
+
+    # All Profiles which disliked the user
+    def profiles_which_disliked_user(self, userId=None):
+        return self.getProfileIds(collectionName=u'LikesDislikes',
+                            userId=userId,
+                            collectionNameChild=u'DislikedBy')
+
     # Cached
     def superElitePicks(self):
         pass
@@ -68,7 +81,7 @@ class FetchProfiles(object):
 
     # Get profile for a certain id 
     def getProfileForId(self, profileId=None):
-        profile_ref = self.db.collection(u'Profiles')
+        profile_ref = db.collection('Profiles')
         doc = profile_ref.document(profileId).get()
         doctemp = doc.to_dict()
         doctemp["id"] = doc.id # un-comment for production
@@ -76,11 +89,10 @@ class FetchProfiles(object):
 
     # Get list of proile ids from a certain collection
     def getProfileIds(self, collectionName=None, userId=None, collectionNameChild=None):
-        collection_ref = self.db.collection(collectionName)
+        collection_ref = db.collection(collectionName)
         collection_ref_likedislike_userIds = collection_ref.document(userId)
         collection_ref_second_child = collection_ref_likedislike_userIds.collection(collectionNameChild)
         docs = collection_ref_second_child.stream()
-        userIds = []
-        _ = [userIds.append(doc.to_dict()['id']) for doc in docs]
+        userIds = [doc.to_dict()['id'] for doc in docs]
         return userIds
     

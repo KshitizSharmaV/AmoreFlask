@@ -1,48 +1,22 @@
 import flask
-import os
-from flask import Flask
-from flask import jsonify, json
-from flask import Response
-from flask import request
-
-import firebase_admin
-from firebase_admin import credentials
-from firebase_admin import auth
-from firebase_admin import exceptions
-from firebase_admin import tenant_mgt
-from firebase_admin import firestore
-
+from flask import Flask, Response, jsonify, json, request
+from firebase_admin import auth, exceptions
 import traceback
-import logging
-from logging.handlers import TimedRotatingFileHandler
 import datetime
+import time
 import string
 import random
-
+from FirestoreConf import db, async_db
+from LoggerConf import logger
 from fetchprofiles import FetchProfiles
 
-# format the log entries
-formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s')
-
-# TimeRotatingHandler to auto save log file with the date
-if not os.path.exists("Logs/"):
-    os.makedirs("Logs/")
-handler = TimedRotatingFileHandler('Logs/authentication.log', when='midnight',backupCount=20)
-handler.setFormatter(formatter)
-logger = logging.getLogger(__name__)
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
 
 app = Flask(__name__)
-# Firebase service account key file
-cred = credentials.Certificate('serviceAccountKey.json')
-default_app = firebase_admin.initialize_app(cred)
+
 session_cookie_expires_in = datetime.timedelta(days=7)
 
-# Instance of firestore db
-db = firestore.client()
 # Instances for fetchprofiles
-fetchProfilesObj = FetchProfiles(db=db, logger=logger)
+fetchProfilesObj = FetchProfiles()
 
 
 @app.route('/testapi', methods=['GET','POST'])
@@ -150,8 +124,43 @@ def fetch_likes_given():
         # Session cookie is invalid, expired or revoked. Force user to login.
         return flask.abort(401, 'Failed to authenticate, not a valid session cookie')
     return flask.abort(400, 'An error occured in API')
- 
 
+@app.route('/storelikesdislikes', methods=['POST']) 
+def store_likes_dislikes_superlikes():
+    """
+    Endpoint to store likes, superlikes, dislikes, liked_by, disliked_by, superliked_by for users
+    """
+    session_cookie = flask.request.cookies.get('session')
+    if not session_cookie:
+        # Session cookie is unavailable. Force user to login.
+        logger.info("Failed to authenticate in fetch_profiles, no session cookie found")
+        logger.exception(traceback.format_exc())
+        return flask.abort(401, 'No session cookie available')
+    # Verify the session cookie. In this case an additional check is added to detect
+    # if the user's Firebase session was revoked, user deleted/disabled, etc.
+    try:
+        decoded_claims = auth.verify_session_cookie(session_cookie, check_revoked=True)
+        
+        """
+        Body of Request contains following payloads:
+        - current user id
+        - swipe info: Like, Dislike, Superlike
+        - swiped profile id
+        """
+        current_user_id = request.json['currentUserID']
+        swipe_info = request.json['swipeInfo']
+        swiped_user_id = request.json['swipedUserID']
+        db.collection('LikesDislikes').document(current_user_id).collection(swipe_info).document(swiped_user_id).set({"id": swiped_user_id, "timestamp": time.time()})
+        by_collection = "LikedBy" if swipe_info == "Likes" else "DislikedBy" if swipe_info == "Dislikes" else "SuperlikedBy"
+        db.collection('LikesDislikes').document(swiped_user_id).collection(by_collection).document(current_user_id).set({"id": current_user_id, "timestamp": time.time()})
+
+        return jsonify({'status': 200})
+    except auth.InvalidSessionCookieError:
+        logger.info("Failed to authenticate in fetch_profiles, not a valid session cookie")
+        logger.exception(traceback.format_exc())
+        # Session cookie is invalid, expired or revoked. Force user to login.
+        return flask.abort(401, 'Failed to authenticate, not a valid session cookie')
+    return flask.abort(400, 'An error occured in API')
 
 if __name__ == '__main__':
     app.run(debug=True)
