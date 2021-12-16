@@ -1,5 +1,7 @@
 from flask import jsonify, json
 from fetchprofiles import FetchProfiles
+from FirestoreConf import db, async_db
+from LoggerConf import logger
 
 # Recommendation system 
 
@@ -20,10 +22,15 @@ from fetchprofiles import FetchProfiles
         e. Query from General Principles DB
         f. Curious/Crazy Questions
         g. Likes, Disliked and SuperLikes are part of recommendation system
+        h. radius of the user
 
     2. General Principles it should work on?
         a. Profile with high score and more complete profiles will be priortized over profiles with no data
         b. This will have a score and a collection where profiles are listed by scores
+        c. User Active 
+        d. How many times user has been reported.. 
+        e. What's the profile completeion score 
+        f. Likes, Dislikes received.
 
     Analysis - Scoring?
         a. the profiles we show have to be good - they are A+
@@ -72,24 +79,20 @@ class RecommendationEngine(object):
     users_show_me_pref: str
 
 
-    def __init__(self, db, logger):
-        self.db = db
-        self.logger = logger
-
     def fetch_filter_and_location_data(self, userId):
-        col_ref = self.db.collection('FilterAndLocation')
+        col_ref = db.collection('FilterAndLocation')
         doc_ref = col_ref.document(userId)
         doc = doc_ref.get()
         self.filter_and_location_data = doc.to_dict()
 
     def fetch_user_profile_data(self, userId):
-        col_ref = self.db.collection('Profiles')
+        col_ref = db.collection('Profiles')
         doc_ref = col_ref.document(userId)
         doc = doc_ref.get()
         self.user_profile_data = doc.to_dict()
 
     def get_preferences(self, userId):
-        self.profiles_array = FetchProfiles(db=self.db, logger=self.logger).getProfiles(userId=userId)
+        self.profiles_array = FetchProfiles().getProfiles(userId=userId)
         self.career_pref = self.filter_and_location_data['careerPreference']
         self.community_pref = self.filter_and_location_data['communityPreference']
         self.country_pref = self.filter_and_location_data['countryPreference']
@@ -122,7 +125,7 @@ class RecommendationEngine(object):
 
     def applyFilters(self, userId):
         """
-        Strict Filtering by: 
+        Strict Filtering by:
         - Country
         - Show Me Preference -- Gender
         - Religion

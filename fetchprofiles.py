@@ -5,15 +5,16 @@ from LoggerConf import logger
 
 class FetchProfiles(object):
 
-    def getProfiles(self, userId=None):
+    def getProfiles(self, userId=None, idsAlreadyInDeck=None):
         profile_ref = db.collection(u'Profiles')
         docs = profile_ref.stream()
         # List of ids already seen by user
         idsAlreadySeenByUser = self.profilesAlreadySeenByUser(userId=userId)
+        allIdsToBeExcluded =  idsAlreadySeenByUser + idsAlreadyInDeck
         profilesArray = []
         for doc in docs:
             doctemp = doc.to_dict()
-            if doc.id not in idsAlreadySeenByUser:
+            if doc.id not in allIdsToBeExcluded:
                 doctemp["id"] = doc.id # un-comment for production
                 profilesArray.append(doctemp)
         logger.info("Successfully sent back profiles for card swipe view")
