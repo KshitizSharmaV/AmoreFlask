@@ -36,39 +36,39 @@ class FetchProfiles(object):
 
     # Profile Id liked by user
     def likedProfilesByUser(self, userId=None):
-        return self.getProfileIds(collectionName=u'LikesDislikes',
-                            userId=userId,
-                            collectionNameChild=u'Likes')
+        return self.get_profiles_from_subcollection(collectionName=u'LikesDislikes',
+                                                    userId=userId,
+                                                    collectionNameChild=u'Likes')
     
     # Profile Id superliked by user
     def superLikedProfilesByUser(self, userId=None):
-        return self.getProfileIds(collectionName=u'LikesDislikes',
-                            userId=userId,
-                            collectionNameChild=u'Superlikes')
+        return self.get_profiles_from_subcollection(collectionName=u'LikesDislikes',
+                                                    userId=userId,
+                                                    collectionNameChild=u'Superlikes')
 
     # Profilee Id dis-liked by user
     def dislikedProfilesByUser(self, userId=None):
-        return self.getProfileIds(collectionName=u'LikesDislikes',
-                            userId=userId,
-                            collectionNameChild=u'Dislikes')
+        return self.get_profiles_from_subcollection(collectionName=u'LikesDislikes',
+                                                    userId=userId,
+                                                    collectionNameChild=u'Dislikes')
 
     # All Profiles which liked the user
-    def profiles_which_liked_user(self, userId=None):
-        return self.getProfileIds(collectionName=u'LikesDislikes',
-                            userId=userId,
-                            collectionNameChild=u'LikedBy')
+    async def profiles_which_liked_user(self, userId=None):
+        return await self.get_profiles_from_subcollection(collectionName=u'LikesDislikes',
+                                                          userId=userId,
+                                                          collectionNameChild=u'LikedBy')
     
     # All Profiles which superliked the user
-    def profiles_which_superliked_user(self, userId=None):
-        return self.getProfileIds(collectionName=u'LikesDislikes',
-                            userId=userId,
-                            collectionNameChild=u'SuperlikedBy')
+    async def profiles_which_superliked_user(self, userId=None):
+        return await self.get_profiles_from_subcollection(collectionName=u'LikesDislikes',
+                                                          userId=userId,
+                                                          collectionNameChild=u'SuperlikedBy')
 
     # All Profiles which disliked the user
-    def profiles_which_disliked_user(self, userId=None):
-        return self.getProfileIds(collectionName=u'LikesDislikes',
-                            userId=userId,
-                            collectionNameChild=u'DislikedBy')
+    async def profiles_which_disliked_user(self, userId=None):
+        return await self.get_profiles_from_subcollection(collectionName=u'LikesDislikes',
+                                                          userId=userId,
+                                                          collectionNameChild=u'DislikedBy')
 
     # Cached
     def superElitePicks(self):
@@ -77,23 +77,23 @@ class FetchProfiles(object):
     # Get Profiles of list of ids
     def getProfilesForListOfIds(self, listofIds=None):
         profilesArray = []
-        _ = [profilesArray.append(self.getProfileForId(profileId=id)) for id in listofIds]
+        _ = [profilesArray.append(self.get_profile_for_id(profileId=id)) for id in listofIds]
         return profilesArray
 
     # Get profile for a certain id 
-    def getProfileForId(self, profileId=None):
-        profile_ref = db.collection('Profiles')
-        doc = profile_ref.document(profileId).get()
+    async def get_profile_for_id(self, profileId=None):
+        profile_ref = async_db.collection('Profiles')
+        doc = await profile_ref.document(profileId).get()
         doctemp = doc.to_dict()
         doctemp["id"] = doc.id # un-comment for production
         return doctemp
 
     # Get list of proile ids from a certain collection
-    def getProfileIds(self, collectionName=None, userId=None, collectionNameChild=None):
-        collection_ref = db.collection(collectionName)
+    async def get_profiles_from_subcollection(self, collectionName=None, userId=None, collectionNameChild=None):
+        collection_ref = async_db.collection(collectionName)
         collection_ref_likedislike_userIds = collection_ref.document(userId)
         collection_ref_second_child = collection_ref_likedislike_userIds.collection(collectionNameChild)
         docs = collection_ref_second_child.stream()
-        userIds = [doc.to_dict()['id'] for doc in docs]
+        userIds = [doc.to_dict()['id'] async for doc in docs]
         return userIds
     
