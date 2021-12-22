@@ -1,1 +1,9 @@
 /serviceAccountKey.json
+*.log
+/Logs/
+/amore_flask_venv/
+*.pyc
+/.idea/
+*.DS_Store
+Services/__pycache__/__init__.cpython-38.pyc
+Services/__pycache__/fetchprofiles.cpython-38.pyc

@@ -9,7 +9,7 @@ How will u grade them :
 """
 import time
 from fetchprofiles import FetchProfiles
-from FirestoreConf import db, async_db
+from ProjectConf.FirestoreConf import async_db
 import asyncio
 
 # total_score: float  # 0 to 10
@@ -50,7 +50,7 @@ async def calculate_popularity_score(userId):
 
 
 async def get_profile_completion_score(userId):
-    profile = await fetch_profiles_object.get_profile_for_id(profileId=userId)
+    profile = await fetch_profiles_object.async_get_profile_for_id(profileId=userId)
     return (float(profile['profileCompletion']) / 100) * 10
 
 

@@ -1,7 +1,5 @@
-from flask import jsonify, json
 from fetchprofiles import FetchProfiles
-from FirestoreConf import db, async_db
-from LoggerConf import logger
+from ProjectConf.FirestoreConf import db
 
 # Recommendation system 
 

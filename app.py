@@ -1,15 +1,13 @@
 import flask
-from flask import Flask, Response, jsonify, json, request
+from flask import Flask, jsonify, request
 from firebase_admin import auth, exceptions
 import traceback
 import datetime
 import time
-import string
-import random
-from FirestoreConf import db, async_db
-from LoggerConf import logger
-from fetchprofiles import FetchProfiles
-
+from ProjectConf.FirestoreConf import db
+from ProjectConf.LoggerConf import logger
+from Services.fetchprofiles import FetchProfiles
+import geohash2
 
 app = Flask(__name__)
 
@@ -19,9 +17,9 @@ session_cookie_expires_in = datetime.timedelta(days=7)
 fetchProfilesObj = FetchProfiles()
 
 
-@app.route('/testapi', methods=['GET','POST'])
+@app.route('/testapi', methods=['GET', 'POST'])
 def test_api():
-    return jsonify([{'message':"Test Check", "statusCode":200}])
+    return jsonify([{'message': "Test Check", "statusCode": 200}])
 
 
 # Sesssion Cookies for all api authentication
@@ -40,7 +38,7 @@ def session_login():
         # Create the session cookie. This will also verify the ID token in the process.
         # The session cookie will have the same claims as the ID token.
         session_cookie = auth.create_session_cookie(id_token, expires_in=session_cookie_expires_in)
-        response = jsonify({'message': 'Successfully authenticated user','statusCode':200})
+        response = jsonify({'message': 'Successfully authenticated user', 'statusCode': 200})
         # Set cookie policy for session cookie.
         expires = datetime.datetime.now() + session_cookie_expires_in
         response.set_cookie('session', session_cookie, expires=expires)
@@ -54,9 +52,7 @@ def session_login():
         logger.exception(traceback.format_exc())
         print(traceback.format_exc())
         return flask.abort(401, 'Failed to create a session cookie')
-        #return jsonify([{"message":"Failed to authenticate","statusCode":400}])
-
-
+        # return jsonify([{"message":"Failed to authenticate","statusCode":400}])
 
 
 # fetch_profiles is used to get profiles for cards in swipe view
@@ -88,7 +84,7 @@ def fetch_profiles():
     try:
         decoded_claims = auth.verify_session_cookie(session_cookie, check_revoked=True)
         profilesArray = fetchProfilesObj.getProfiles(userId=decoded_claims['user_id'],
-                                                    idsAlreadyInDeck= request.json["idsAlreadyInDeck"])
+                                                     idsAlreadyInDeck=request.json["idsAlreadyInDeck"])
         return jsonify(profilesArray)
     except auth.InvalidSessionCookieError:
         logger.info("Failed to authenticate in fetch_profiles, not a valid session cookie")
@@ -96,7 +92,6 @@ def fetch_profiles():
         # Session cookie is invalid, expired or revoked. Force user to login.
         return flask.abort(401, 'Failed to authenticate, not a valid session cookie')
     return flask.abort(400, 'An error occured in API')
-
 
 
 # fetch_likes_given is used to get profiles which are super liked by the user
@@ -116,7 +111,7 @@ def fetch_likes_given():
     # if the user's Firebase session was revoked, user deleted/disabled, etc.
     try:
         decoded_claims = auth.verify_session_cookie(session_cookie, check_revoked=True)
-        superLikedIdsList = fetchProfilesObj.superLikedProfilesByUser(userId = decoded_claims['user_id'])
+        superLikedIdsList = fetchProfilesObj.superLikedProfilesByUser(userId=decoded_claims['user_id'])
         profilesArray = fetchProfilesObj.getProfilesForListOfIds(listofIds=superLikedIdsList)
         return jsonify(profilesArray)
     except auth.InvalidSessionCookieError:
@@ -126,7 +121,8 @@ def fetch_likes_given():
         return flask.abort(401, 'Failed to authenticate, not a valid session cookie')
     return flask.abort(400, 'An error occured in API')
 
-@app.route('/storelikesdislikes', methods=['POST']) 
+
+@app.route('/storelikesdislikes', methods=['POST'])
 def store_likes_dislikes_superlikes():
     """
     Endpoint to store likes, superlikes, dislikes, liked_by, disliked_by, superliked_by for users
@@ -141,7 +137,7 @@ def store_likes_dislikes_superlikes():
     # if the user's Firebase session was revoked, user deleted/disabled, etc.
     try:
         decoded_claims = auth.verify_session_cookie(session_cookie, check_revoked=True)
-        
+
         """
         Body of Request contains following payloads:
         - current user id
@@ -151,9 +147,11 @@ def store_likes_dislikes_superlikes():
         current_user_id = request.json['currentUserID']
         swipe_info = request.json['swipeInfo']
         swiped_user_id = request.json['swipedUserID']
-        db.collection('LikesDislikes').document(current_user_id).collection(swipe_info).document(swiped_user_id).set({"id": swiped_user_id, "timestamp": time.time()})
+        db.collection('LikesDislikes').document(current_user_id).collection(swipe_info).document(swiped_user_id).set(
+            {"id": swiped_user_id, "timestamp": time.time()})
         by_collection = "LikedBy" if swipe_info == "Likes" else "DislikedBy" if swipe_info == "Dislikes" else "SuperlikedBy"
-        db.collection('LikesDislikes').document(swiped_user_id).collection(by_collection).document(current_user_id).set({"id": current_user_id, "timestamp": time.time()})
+        db.collection('LikesDislikes').document(swiped_user_id).collection(by_collection).document(current_user_id).set(
+            {"id": current_user_id, "timestamp": time.time()})
 
         return jsonify({'status': 200})
     except auth.InvalidSessionCookieError:
@@ -162,6 +160,42 @@ def store_likes_dislikes_superlikes():
         # Session cookie is invalid, expired or revoked. Force user to login.
         return flask.abort(401, 'Failed to authenticate, not a valid session cookie')
     return flask.abort(400, 'An error occured in API')
+
+
+@app.route('/getgeohash', methods=['POST'])
+def get_geohash_for_location():
+    """
+    Endpoint to get Geohash for given latitude and longitude
+    """
+    session_cookie = flask.request.cookies.get('session')
+    if not session_cookie:
+        # Session cookie is unavailable. Force user to login.
+        logger.info("Failed to authenticate in fetch_profiles, no session cookie found")
+        logger.exception(traceback.format_exc())
+        return flask.abort(401, 'No session cookie available')
+    # Verify the session cookie. In this case an additional check is added to detect
+    # if the user's Firebase session was revoked, user deleted/disabled, etc.
+    try:
+        decoded_claims = auth.verify_session_cookie(session_cookie, check_revoked=True)
+        """
+        Body of Request contains following payloads:
+        - latitude
+        - longitude
+        - precision
+        While Updating the Filters and Location, get Geohash for the user location
+        """
+        latitude = request.json['latitude']
+        longitude = request.json['longitude']
+        precision = int(request.json['precision'])
+        geohash = geohash2.encode(latitude=latitude, longitude=longitude, precision=precision)
+        return jsonify({'geohash': geohash})
+    except auth.InvalidSessionCookieError:
+        logger.info("Failed to authenticate in fetch_profiles, not a valid session cookie")
+        logger.exception(traceback.format_exc())
+        # Session cookie is invalid, expired or revoked. Force user to login.
+        return flask.abort(401, 'Failed to authenticate, not a valid session cookie')
+    return flask.abort(400, 'An error occured in API')
+
 
 if __name__ == '__main__':
     app.run(debug=True)
