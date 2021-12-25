@@ -1,4 +1,4 @@
 
 	[console_scripts]
-	proximityhash=proximityhash:main
+	ProximityHash=ProximityHash:main
   

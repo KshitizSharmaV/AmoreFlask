@@ -6,16 +6,12 @@ import datetime
 import time
 from ProjectConf.FirestoreConf import db
 from ProjectConf.LoggerConf import logger
-from Services.fetchprofiles import FetchProfiles
+from Services.fetchprofiles import getProfiles, get_profiles_within_radius, superLikedProfilesByUser, getProfilesForListOfIds
 import geohash2
 
 app = Flask(__name__)
 
 session_cookie_expires_in = datetime.timedelta(days=7)
-
-# Instances for fetchprofiles
-fetchProfilesObj = FetchProfiles()
-
 
 @app.route('/testapi', methods=['GET', 'POST'])
 def test_api():
@@ -83,7 +79,7 @@ def fetch_profiles():
     # if the user's Firebase session was revoked, user deleted/disabled, etc.
     try:
         decoded_claims = auth.verify_session_cookie(session_cookie, check_revoked=True)
-        profilesArray = fetchProfilesObj.getProfiles(userId=decoded_claims['user_id'],
+        profilesArray = getProfiles(userId=decoded_claims['user_id'],
                                                      idsAlreadyInDeck=request.json["idsAlreadyInDeck"])
         return jsonify(profilesArray)
     except auth.InvalidSessionCookieError:
@@ -111,8 +107,8 @@ def fetch_likes_given():
     # if the user's Firebase session was revoked, user deleted/disabled, etc.
     try:
         decoded_claims = auth.verify_session_cookie(session_cookie, check_revoked=True)
-        superLikedIdsList = fetchProfilesObj.superLikedProfilesByUser(userId=decoded_claims['user_id'])
-        profilesArray = fetchProfilesObj.getProfilesForListOfIds(listofIds=superLikedIdsList)
+        superLikedIdsList = superLikedProfilesByUser(userId=decoded_claims['user_id'])
+        profilesArray = getProfilesForListOfIds(listofIds=superLikedIdsList)
         return jsonify(profilesArray)
     except auth.InvalidSessionCookieError:
         logger.info("Failed to authenticate in fetch_profiles, not a valid session cookie")
@@ -189,6 +185,48 @@ def get_geohash_for_location():
         precision = int(request.json['precision'])
         geohash = geohash2.encode(latitude=latitude, longitude=longitude, precision=precision)
         return jsonify({'geohash': geohash})
+    except auth.InvalidSessionCookieError:
+        logger.info("Failed to authenticate in fetch_profiles, not a valid session cookie")
+        logger.exception(traceback.format_exc())
+        # Session cookie is invalid, expired or revoked. Force user to login.
+        return flask.abort(401, 'Failed to authenticate, not a valid session cookie')
+    return flask.abort(400, 'An error occured in API')
+
+# fetch_profiles within given radius for cards in swipe view
+@app.route('/fetchprofileswithinradius', methods=['POST'])
+def fetch_profiles_within_given_radius():
+    """
+    :accepts:
+    - n =  no. of profiles
+    - radius = radius of search
+    - Current location of user -- Latitude, Longitude
+    - id token
+    :process:
+    - verify id token
+    - get all users uid (Will be refined for querying within a particular radius)
+    - filter and sort based on Recommendation Engine
+    - eliminate user uids present in current user's Likes and Dislikes
+    - pick n top uids from rest of the uids
+    :return:
+    - array of n uids
+    """
+    session_cookie = flask.request.cookies.get('session')
+    if not session_cookie:
+        # Session cookie is unavailable. Force user to login.
+        logger.info("Failed to authenticate in fetch_profiles, no session cookie found")
+        logger.exception(traceback.format_exc())
+        return flask.abort(401, 'No session cookie available')
+    # Verify the session cookie. In this case an additional check is added to detect
+    # if the user's Firebase session was revoked, user deleted/disabled, etc.
+    try:
+        decoded_claims = auth.verify_session_cookie(session_cookie, check_revoked=True)
+        userId = decoded_claims['user_id']
+        idsAlreadyInDeck = request.json["idsAlreadyInDeck"]
+        latitude = request.json['latitude']
+        longitude = request.json['longitude']
+        radius = int(request.json['radius'])
+        profilesArray = get_profiles_within_radius(userId=userId, idsAlreadyInDeck=idsAlreadyInDeck, latitude=latitude, longitude=longitude, radius=radius)
+        return jsonify(profilesArray)
     except auth.InvalidSessionCookieError:
         logger.info("Failed to authenticate in fetch_profiles, not a valid session cookie")
         logger.exception(traceback.format_exc())

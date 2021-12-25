@@ -9,146 +9,134 @@ import asyncio
 import itertools
 
 
-class FetchProfiles(object):
-
-    def getProfiles(self, userId=None, idsAlreadyInDeck=None):
-        profile_ref = db.collection(u'Profiles')
-        docs = profile_ref.stream()
-        # List of ids already seen by user
-        idsAlreadySeenByUser = self.profilesAlreadySeenByUser(userId=userId)
-        allIdsToBeExcluded = idsAlreadySeenByUser + idsAlreadyInDeck
-        profilesArray = []
-        for doc in docs:
-            doctemp = doc.to_dict()
-            if doc.id not in allIdsToBeExcluded:
-                doctemp["id"] = doc.id  # un-comment for production
-                profilesArray.append(doctemp)
-        logger.info("Successfully sent back profiles for card swipe view")
-        return profilesArray
-
-    '''
-    2. Send user card deck list from client and set(idsAlreadySeenByUser+inDeck)
-    3. Caching - to be investigated further - Basic functionality functioning before - new cache for every server?
-    '''
-
-    # Caching ? - Next Stage
-    def profilesAlreadySeenByUser(self, userId=None):
-        idsAlreadySeenByUser = []
-        collection_ref = db.collection('LikesDislikes').document(userId).collections()
-        for collection in collection_ref:
-            for doc in collection.stream():
-                idsAlreadySeenByUser.append(doc.to_dict()['id'])
-        return idsAlreadySeenByUser
-
-    # Profile Id liked by user
-    def likedProfilesByUser(self, userId=None):
-        return self.get_profiles_from_subcollection(collectionName=u'LikesDislikes',
-                                                    userId=userId,
-                                                    collectionNameChild=u'Likes')
-
-    # Profile Id superliked by user
-    def superLikedProfilesByUser(self, userId=None):
-        return self.get_profiles_from_subcollection(collectionName=u'LikesDislikes',
-                                                    userId=userId,
-                                                    collectionNameChild=u'Superlikes')
-
-    # Profilee Id dis-liked by user
-    def dislikedProfilesByUser(self, userId=None):
-        return self.get_profiles_from_subcollection(collectionName=u'LikesDislikes',
-                                                    userId=userId,
-                                                    collectionNameChild=u'Dislikes')
-
-    # All Profiles which liked the user
-    async def profiles_which_liked_user(self, userId=None):
-        return await self.async_get_profiles_from_subcollection(collectionName=u'LikesDislikes',
-                                                                userId=userId,
-                                                                collectionNameChild=u'LikedBy')
-
-    # All Profiles which superliked the user
-    async def profiles_which_superliked_user(self, userId=None):
-        return await self.async_get_profiles_from_subcollection(collectionName=u'LikesDislikes',
-                                                                userId=userId,
-                                                                collectionNameChild=u'SuperlikedBy')
-
-    # All Profiles which disliked the user
-    async def profiles_which_disliked_user(self, userId=None):
-        return await self.async_get_profiles_from_subcollection(collectionName=u'LikesDislikes',
-                                                                userId=userId,
-                                                                collectionNameChild=u'DislikedBy')
-
-    # Cached
-    def superElitePicks(self):
-        pass
-
-    # Get Profiles of list of ids
-    def getProfilesForListOfIds(self, listofIds=None):
-        profilesArray = []
-        _ = [profilesArray.append(self.get_profile_for_id(profileId=id)) for id in listofIds]
-        return profilesArray
-
-    # Get profile for a certain id 
-    async def async_get_profile_for_id(self, profileId=None):
-        profile_ref = async_db.collection('Profiles')
-        doc = await profile_ref.document(profileId).get()
+def getProfiles(userId=None, idsAlreadyInDeck=None):
+    profile_ref = db.collection(u'Profiles')
+    docs = profile_ref.stream()
+    # List of ids already seen by user
+    idsAlreadySeenByUser = profilesAlreadySeenByUser(userId=userId)
+    allIdsToBeExcluded = idsAlreadySeenByUser + idsAlreadyInDeck
+    profilesArray = []
+    for doc in docs:
         doctemp = doc.to_dict()
-        doctemp["id"] = doc.id  # un-comment for production
-        return doctemp
+        if doc.id not in allIdsToBeExcluded:
+            doctemp["id"] = doc.id  # un-comment for production
+            profilesArray.append(doctemp)
+    logger.info("Successfully sent back profiles for card swipe view")
+    return profilesArray
 
-    # Get list of proile ids from a certain collection
-    async def async_get_profiles_from_subcollection(self, collectionName=None, userId=None, collectionNameChild=None):
-        collection_ref = async_db.collection(collectionName)
-        collection_ref_likedislike_userIds = collection_ref.document(userId)
-        collection_ref_second_child = collection_ref_likedislike_userIds.collection(collectionNameChild)
-        docs = collection_ref_second_child.stream()
-        userIds = [doc.to_dict()['id'] async for doc in docs]
-        return userIds
+'''
+2. Send user card deck list from client and set(idsAlreadySeenByUser+inDeck)
+3. Caching - to be investigated further - Basic functionality functioning before - new cache for every server?
+'''
 
-    # Get profile for a certain id
-    def get_profile_for_id(self, profileId=None):
-        profile_ref = db.collection('Profiles')
-        doc = profile_ref.document(profileId).get()
-        doctemp = doc.to_dict()
-        doctemp["id"] = doc.id  # un-comment for production
-        return doctemp
+# Caching ? - Next Stage
+def profilesAlreadySeenByUser(userId=None):
+    idsAlreadySeenByUser = []
+    collection_ref = db.collection('LikesDislikes').document(userId).collections()
+    for collection in collection_ref:
+        for doc in collection.stream():
+            idsAlreadySeenByUser.append(doc.to_dict()['id'])
+    return idsAlreadySeenByUser
 
-    # Get list of proile ids from a certain collection
-    def get_profiles_from_subcollection(self, collectionName=None, userId=None, collectionNameChild=None):
-        collection_ref = db.collection(collectionName)
-        collection_ref_likedislike_userIds = collection_ref.document(userId)
-        collection_ref_second_child = collection_ref_likedislike_userIds.collection(collectionNameChild)
-        docs = collection_ref_second_child.stream()
-        userIds = [doc.to_dict()['id'] for doc in docs]
-        return userIds
+# Profile Id liked by user
+def likedProfilesByUser(userId=None):
+    return get_profiles_from_subcollection(collectionName=u'LikesDislikes',
+                                                userId=userId,
+                                                collectionNameChild=u'Likes')
 
+# Profile Id superliked by user
+def superLikedProfilesByUser(userId=None):
+    return get_profiles_from_subcollection(collectionName=u'LikesDislikes',
+                                                userId=userId,
+                                                collectionNameChild=u'Superlikes')
 
-def get_max_precision_level(radius):
-    """
-    Under implementation, not used anywhere currently.
-    :param radius:
-    :return:
-    """
-    if radius > 2500:
-        return 1
-    elif radius > 630:
-        return 2
-    elif radius > 78:
-        return 3
-    elif radius > 20:
-        return 4
-    elif radius > 2.5:
-        return 5
-    elif radius > 0.6:
-        return 6
-    elif radius > 0.07:
-        return 7
+# Profilee Id dis-liked by user
+def dislikedProfilesByUser(userId=None):
+    return get_profiles_from_subcollection(collectionName=u'LikesDislikes',
+                                                userId=userId,
+                                                collectionNameChild=u'Dislikes')
 
+# All Profiles which liked the user
+async def profiles_which_liked_user(userId=None):
+    return await async_get_profiles_from_subcollection(collectionName=u'LikesDislikes',
+                                                            userId=userId,
+                                                            collectionNameChild=u'LikedBy')
+
+# All Profiles which superliked the user
+async def profiles_which_superliked_user(userId=None):
+    return await async_get_profiles_from_subcollection(collectionName=u'LikesDislikes',
+                                                            userId=userId,
+                                                            collectionNameChild=u'SuperlikedBy')
+
+# All Profiles which disliked the user
+async def profiles_which_disliked_user(userId=None):
+    return await async_get_profiles_from_subcollection(collectionName=u'LikesDislikes',
+                                                            userId=userId,
+                                                            collectionNameChild=u'DislikedBy')
+
+# Cached
+def superElitePicks(self):
+    pass
+
+# Get Profiles of list of ids
+def getProfilesForListOfIds(listofIds=None):
+    profilesArray = []
+    _ = [profilesArray.append(get_profile_for_id(profileId=id)) for id in listofIds]
+    return profilesArray
+
+# Get profile for a certain id 
+async def async_get_profile_for_id(profileId=None):
+    profile_ref = async_db.collection('Profiles')
+    doc = await profile_ref.document(profileId).get()
+    doctemp = doc.to_dict()
+    doctemp["id"] = doc.id  # un-comment for production
+    return doctemp
+
+# Get list of proile ids from a certain collection
+async def async_get_profiles_from_subcollection(collectionName=None, userId=None, collectionNameChild=None):
+    collection_ref = async_db.collection(collectionName)
+    collection_ref_likedislike_userIds = collection_ref.document(userId)
+    collection_ref_second_child = collection_ref_likedislike_userIds.collection(collectionNameChild)
+    docs = collection_ref_second_child.stream()
+    userIds = [doc.to_dict()['id'] async for doc in docs]
+    return userIds
+
+# Get profile for a certain id
+def get_profile_for_id(profileId=None):
+    profile_ref = db.collection('Profiles')
+    doc = profile_ref.document(profileId).get()
+    doctemp = doc.to_dict()
+    doctemp["id"] = doc.id  # un-comment for production
+    return doctemp
+
+# Get list of proile ids from a certain collection
+def get_profiles_from_subcollection(collectionName=None, userId=None, collectionNameChild=None):
+    collection_ref = db.collection(collectionName)
+    collection_ref_likedislike_userIds = collection_ref.document(userId)
+    collection_ref_second_child = collection_ref_likedislike_userIds.collection(collectionNameChild)
+    docs = collection_ref_second_child.stream()
+    userIds = [doc.to_dict()['id'] for doc in docs]
+    return userIds
 
 async def get_profiles_within_geohash(geohash):
     colref = async_db.collection('FilterAndLocation')
-    docs = colref.where("geohash.geohash", ">=", geohash)
-    profiles = [doc.id async for doc in docs.stream()]
+    if len(geohash) == 2:
+        docs = colref.where("geohash2", "==", geohash)
+        print("geo2 triggered...")
+    elif len(geohash) == 3:
+        docs = colref.where("geohash3", "==", geohash)
+        print("geo3 triggered...")
+    elif len(geohash) == 4:
+        docs = colref.where("geohash4", "==", geohash)
+        print("geo4 triggered...")
+    elif len(geohash) == 5:
+        docs = colref.where("geohash5", "==", geohash)
+        print("geo5 triggered...")
+    else:
+        print("Else part triggered...")
+        docs = colref.where("geohash", ">=", geohash).where('geohash', '<=', geohash + '\uf8ff')
+    profiles = [doc async for doc in docs.stream()]
     return profiles
-
 
 async def profiles_within_radius_tasks(latitude, longitude, radius):
     """
@@ -161,18 +149,45 @@ async def profiles_within_radius_tasks(latitude, longitude, radius):
     :param radius:
     :return: Query results from firestore (user IDs)
     """
-    geohashes = create_geohash(latitude=latitude, longitude=longitude, radius=radius, precision=10,
-                               georaptor_flag=True, minlevel=3, maxlevel=7)
+    # geohashes = create_geohash(latitude=latitude, longitude=longitude, radius=radius, precision=get_max_precision_level(radius/9),
+    #                            georaptor_flag=True)
+    geohashes = list(create_geohash(latitude=latitude, longitude=longitude, radius=radius*1000, precision=4,
+                                georaptor_flag=True))
     print(geohashes)
+    print(len(geohashes))
     return await asyncio.gather(*[get_profiles_within_geohash(geohash) for geohash in geohashes])
+    # return await asyncio.gather(*[get_profiles_within_geohashes(geohashes[i:i+10]) for i in range(0, len(geohashes), 10)])
 
-# Invoke this function to test geohash querying
-def get_profiles_within_radius(latitude, longitude, radius):
+# Production function used in API for geohash querying
+def get_profiles_within_radius(userId, idsAlreadyInDeck, latitude, longitude, radius):
     start = time.time()
     loop = asyncio.get_event_loop()
     future = asyncio.ensure_future(profiles_within_radius_tasks(latitude=latitude, longitude=longitude, radius=radius))
-    results = loop.run_until_complete(future)
+    profiles = loop.run_until_complete(future)
     # results = asyncio.run(profiles_within_radius_tasks(latitude=latitude, longitude=longitude, radius=radius))
-    results = list(set(itertools.chain.from_iterable(results)))
+    profiles = list(set(itertools.chain.from_iterable(profiles)))
+    profiles = list(map(lambda x: x.to_dict(), profiles))
+    # List of ids already seen by user
+    idsAlreadySeenByUser = profilesAlreadySeenByUser(userId=userId)
+    allIdsToBeExcluded = idsAlreadySeenByUser + idsAlreadyInDeck
+    profilesArray = []
+    for profile in profiles:
+        profile_temp = profile.to_dict()
+        if profile.id not in allIdsToBeExcluded:
+            profile_temp["id"] = profile.id  # un-comment for production
+            profilesArray.append(profile_temp)
+    logger.info("Successfully sent back profiles for card swipe view")
     print(f"Time Elapsed: {time.time() - start}")
-    return results
+    return profilesArray
+
+# Invoke this function to test geohash querying
+def test_get_profiles_within_radius(latitude, longitude, radius):
+    start = time.time()
+    loop = asyncio.get_event_loop()
+    future = asyncio.ensure_future(profiles_within_radius_tasks(latitude=latitude, longitude=longitude, radius=radius))
+    profiles = loop.run_until_complete(future)
+    # results = asyncio.run(profiles_within_radius_tasks(latitude=latitude, longitude=longitude, radius=radius))
+    profiles = list(set(itertools.chain.from_iterable(profiles)))
+    profiles = list(map(lambda x: x.to_dict(), profiles))
+    print(f"Time Elapsed: {time.time() - start}")
+    return profiles
