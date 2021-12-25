@@ -235,5 +235,42 @@ def fetch_profiles_within_given_radius():
     return flask.abort(400, 'An error occured in API')
 
 
+# every time a user swipes the application calls this api to store data in collection
+@app.route('/reportProfile', methods=['POST']) 
+def report_profiles():
+    """
+    Endpoint to store likes, superlikes, dislikes, liked_by, disliked_by, superliked_by for users
+    """
+    session_cookie = flask.request.cookies.get('session')
+    if not session_cookie:
+        logger.info("Failed to authenticate in fetch_profiles, no session cookie found")
+        logger.exception(traceback.format_exc())
+        return flask.abort(401, 'No session cookie available')
+    try:
+        decoded_claims = auth.verify_session_cookie(session_cookie, check_revoked=True)
+        """
+        Body of Request contains following payloads:
+        - current user id
+        - reported profile id
+        """
+        current_user_id = decoded_claims['user_id']
+        reported_profile_id = request.json['swipedProfileID']
+        reason_given = request.json['reasonGiven']
+        description_given = request.json['descriptionGiven']
+        db.collection('ReportedProfile').document(reported_profile_id).collection(current_user_id).document("ReportingDetails").set({"reportedById": current_user_id, 
+                                                                        "idBeingReported":reported_profile_id,
+                                                                        "reasonGiven":reason_given,
+                                                                        "descriptionGiven":description_given,
+                                                                        "timestamp": time.time()
+                                                                    })
+        return jsonify({'status': 200})
+    except auth.InvalidSessionCookieError:
+        logger.info("Failed to authenticate in fetch_profiles, not a valid session cookie")
+        logger.exception(traceback.format_exc())
+        return flask.abort(401, 'Failed to authenticate, not a valid session cookie')
+    return flask.abort(400, 'An error occured in API')
+
+
+
 if __name__ == '__main__':
     app.run(debug=True)
