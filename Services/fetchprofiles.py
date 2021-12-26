@@ -38,41 +38,44 @@ def profilesAlreadySeenByUser(userId=None):
             idsAlreadySeenByUser.append(doc.to_dict()['id'])
     return idsAlreadySeenByUser
 
+
+####################################
+# Non-async functions. Flask can't make use of async function while processing requests. The async functioanlity is being 
+# hence forth depployed on WSGI server which creates a thread for every request. GUNICON incase of flask i.e. how it communicates
+# betwee a server and a flask application - KTZ
+####################################
 # Profile Id liked by user
-def likedProfilesByUser(userId=None):
-    return get_profiles_from_subcollection(collectionName=u'LikesDislikes',
-                                                userId=userId,
-                                                collectionNameChild=u'Likes')
-
+def likes(userId=None):
+    return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId,collectionNameChild=u'Likes')
 # Profile Id superliked by user
-def superLikedProfilesByUser(userId=None):
-    return get_profiles_from_subcollection(collectionName=u'LikesDislikes',
-                                                userId=userId,
-                                                collectionNameChild=u'Superlikes')
-
+def superLikes(userId=None):
+    return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId, collectionNameChild=u'Superlikes')
 # Profilee Id dis-liked by user
-def dislikedProfilesByUser(userId=None):
-    return get_profiles_from_subcollection(collectionName=u'LikesDislikes',
-                                                userId=userId,
-                                                collectionNameChild=u'Dislikes')
+def dislikes(userId=None):
+    return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId, collectionNameChild=u'Dislikes')
+def likedBy(userId=None):
+    return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId,collectionNameChild=u'LikeBy')
+# Profile Id superliked by user
+def dislikedBy(userId=None):
+    return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId, collectionNameChild=u'DislikedBy')
+# Profilee Id dis-liked by user
+def superLikedBy(userId=None):
+    return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId, collectionNameChild=u'SuperlikedBy')
+
+
+####################################
+# Async functions to be used internally for service jobs
+####################################
 
 # All Profiles which liked the user
 async def profiles_which_liked_user(userId=None):
-    return await async_get_profiles_from_subcollection(collectionName=u'LikesDislikes',
-                                                            userId=userId,
-                                                            collectionNameChild=u'LikedBy')
-
+    return await async_get_profiles_from_subcollection(collectionName=u'LikesDislikes',userId=userId,collectionNameChild=u'LikedBy')
 # All Profiles which superliked the user
 async def profiles_which_superliked_user(userId=None):
-    return await async_get_profiles_from_subcollection(collectionName=u'LikesDislikes',
-                                                            userId=userId,
-                                                            collectionNameChild=u'SuperlikedBy')
-
+    return await async_get_profiles_from_subcollection(collectionName=u'LikesDislikes',userId=userId,collectionNameChild=u'SuperlikedBy')
 # All Profiles which disliked the user
 async def profiles_which_disliked_user(userId=None):
-    return await async_get_profiles_from_subcollection(collectionName=u'LikesDislikes',
-                                                            userId=userId,
-                                                            collectionNameChild=u'DislikedBy')
+    return await async_get_profiles_from_subcollection(collectionName=u'LikesDislikes',userId=userId,collectionNameChild=u'DislikedBy')
 
 # Cached
 def superElitePicks(self):

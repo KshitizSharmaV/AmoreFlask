@@ -53,11 +53,11 @@ def validateCookie(f):
                 decoded_claims = auth.verify_session_cookie(session_cookie, check_revoked=True)
                 return f(decoded_claims, *args, **kws)
             except auth.InvalidSessionCookieError:
-                current_app.logger.info("InvalidSessionCookieError: Can't verify cookie, cookie must have expired")
+                current_app.logger.exception("InvalidSessionCookieError: Can't verify cookie, cookie must have expired")
                 current_app.logger.exception(traceback.format_exc())
                 flask.abort(401, 'InvalidSessionCookieError')
         except:
-            current_app.logger.info("Cookie verification failed: Unsure about error")
+            current_app.logger.exception("Cookie verification failed: Unsure about error")
             current_app.logger.exception(traceback.format_exc())
             flask.abort(401, 'Failed to validate cookie')
     return decorated_function
