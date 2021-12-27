@@ -5,7 +5,7 @@ import traceback, time
 from ProjectConf.AuthenticationDecorators import validateCookie
 from ProjectConf.FirestoreConf import db
 from Services.FetchProfiles import getProfiles
-from Services.FetchProfiles import superLikes, getProfilesForListOfIds, superLikedBy
+from Services.FetchProfiles import superLikes, getProfilesForListOfIds, superLikedBy, elitePicks
 
 app_super_likes_dislikes = Blueprint('AppSuperLikesDislikes', __name__)
 
@@ -19,9 +19,10 @@ def fetch_likes_given(decoded_claims=None):
     """
     try:
         userId = decoded_claims['user_id']
-        superLikedIdsList = superLikes(userId=decoded_claims['user_id'])
-        profilesArray = getProfilesForListOfIds(listofIds=superLikedIdsList)
+        idsList = superLikes(userId=decoded_claims['user_id'])
+        profilesArray = getProfilesForListOfIds(listofIds=idsList)
         current_app.logger.info("%s Successfully fetches likes given /fetchlikesgiven"  %(userId))
+        print("fetchlikesgiven " + str(len(profilesArray)))
         return jsonify(profilesArray)
     except Exception as e:
         current_app.logger.exception("%s Failed to get fetch likes given in /fetchlikesgiven"  %(userId))
@@ -38,10 +39,10 @@ def fetch_likes_received(decoded_claims=None):
     """
     try:
         userId = decoded_claims['user_id']
-        superLikedIdsList = superLikedBy(userId=decoded_claims['user_id'])
-        profilesArray = getProfilesForListOfIds(listofIds=superLikedIdsList)
+        idsList = superLikedBy(userId=decoded_claims['user_id'])
+        profilesArray = getProfilesForListOfIds(listofIds=idsList)
         current_app.logger.info("%s Successfully fetches likes given /fetchlikesreceived"  %(userId))
-        print(jsonify(profilesArray))
+        print("fetch_likes_received " + str(len(profilesArray)))
         return jsonify(profilesArray)
     except Exception as e:
         current_app.logger.exception("%s Failed to get fetch likes given in /fetchlikesreceived"  %(userId))
@@ -59,10 +60,10 @@ def fetch_elites(decoded_claims=None):
     """
     try:
         userId = decoded_claims['user_id']
-        superLikedIdsList = superLikedBy(userId=decoded_claims['user_id'])
-        profilesArray = getProfilesForListOfIds(listofIds=superLikedIdsList)
+        idsList = elitePicks()
+        profilesArray = getProfilesForListOfIds(listofIds=idsList)
         current_app.logger.info("%s Successfully fetches likes given /fetchlikesreceived"  %(userId))
-        print(jsonify(profilesArray))
+        print("fetch_elites " + str(len(profilesArray)))
         return jsonify(profilesArray)
     except Exception as e:
         current_app.logger.exception("%s Failed to get fetch likes given in /fetchlikesreceived"  %(userId))

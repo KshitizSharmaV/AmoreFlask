@@ -32,6 +32,7 @@ def fetch_profiles(decoded_claims=None):
         profilesArray = getProfiles(userId=decoded_claims['user_id'],
                                         idsAlreadyInDeck=request.json["idsAlreadyInDeck"])
         current_app.logger.info("%s Successfully fetched profile /fetchlikesgiven" %(userId))
+        print("fetch_profiles " + str(len(profilesArray)))
         return jsonify(profilesArray)
     except Exception as e:
         current_app.logger.exception("%s Failed to fetch profile in /fetchprofiles " %(userId))
@@ -62,6 +63,7 @@ def store_likes_dislikes_superlikes(decoded_claims=None):
         by_collection = "LikedBy" if swipe_info == "Likes" else "DislikedBy" if swipe_info == "Dislikes" else "SuperlikedBy"
         db.collection('LikesDislikes').document(swiped_user_id).collection(by_collection).document(current_user_id).set(
             {"id": current_user_id, "timestamp": time.time()})
+        print(current_user_id, swipe_info, swiped_user_id)
         current_app.logger.info("%s Successfully stored likes dislikes and superlike given /fetchlikesgiven"  %(userId))
         return jsonify({'status': 200})
     except Exception as e:

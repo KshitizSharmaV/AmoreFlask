@@ -6,6 +6,7 @@ from ProjectConf.FirestoreConf import db, async_db
 from ProjectConf.LoggerConf import logger
 from ProximityHash.proximityhash import *
 import asyncio
+import traceback
 import itertools
 
 
@@ -61,6 +62,19 @@ def dislikedBy(userId=None):
 # Profilee Id dis-liked by user
 def superLikedBy(userId=None):
     return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId, collectionNameChild=u'SuperlikedBy')
+def elitePicks():
+    try:
+        profile_ref = db.collection('ProfilesGrading')
+        query = profile_ref.order_by("totalScore").limit_to_last(10)
+        docs = query.get()
+        userIds = []
+        for doc in docs:
+            temp = doc.to_dict()
+            userIds.append(temp['id'])
+        return userIds
+    except Exception as e:
+        print(traceback.format_exc())
+    
 
 
 ####################################
@@ -76,10 +90,6 @@ async def profiles_which_superliked_user(userId=None):
 # All Profiles which disliked the user
 async def profiles_which_disliked_user(userId=None):
     return await async_get_profiles_from_subcollection(collectionName=u'LikesDislikes',userId=userId,collectionNameChild=u'DislikedBy')
-
-# Cached
-def superElitePicks(self):
-    pass
 
 # Get Profiles of list of ids
 def getProfilesForListOfIds(listofIds=None):
