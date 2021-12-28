@@ -1,5 +1,6 @@
 # Profiles Fetcher
 # This will get the profiles for the swipe views
+from logging import exception
 import time
 
 from ProjectConf.FirestoreConf import db, async_db
@@ -8,7 +9,7 @@ from ProximityHash.proximityhash import *
 import asyncio
 import traceback
 import itertools
-
+from google.cloud import firestore
 
 def getProfiles(userId=None, idsAlreadyInDeck=None):
     profile_ref = db.collection(u'Profiles')
@@ -46,23 +47,23 @@ def profilesAlreadySeenByUser(userId=None):
 # betwee a server and a flask application - KTZ
 ####################################
 # Profile Id liked by user
-def likes(userId=None):
-    return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId,collectionNameChild=u'Likes')
+def likesGiven(userId=None):
+    return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId, collectionNameChild=u'Likes')
 # Profile Id superliked by user
-def superLikes(userId=None):
+def superLikesGiven(userId=None):
     return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId, collectionNameChild=u'Superlikes')
 # Profilee Id dis-liked by user
-def dislikes(userId=None):
+def dislikesGiven(userId=None):
     return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId, collectionNameChild=u'Dislikes')
-def likedBy(userId=None):
-    return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId,collectionNameChild=u'LikeBy')
+def likesReceived(userId=None):
+    return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId,collectionNameChild=u'LikedBy')
 # Profile Id superliked by user
-def dislikedBy(userId=None):
+def dislikesLikesReceived(userId=None):
     return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId, collectionNameChild=u'DislikedBy')
 # Profilee Id dis-liked by user
-def superLikedBy(userId=None):
+def superLikesReceived(userId=None):
     return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId, collectionNameChild=u'SuperlikedBy')
-def elitePicks():
+def elitePicks(userId=None):
     try:
         profile_ref = db.collection('ProfilesGrading')
         query = profile_ref.order_by("totalScore").limit_to_last(10)
@@ -124,12 +125,15 @@ def get_profile_for_id(profileId=None):
 
 # Get list of proile ids from a certain collection
 def get_profiles_from_subcollection(collectionName=None, userId=None, collectionNameChild=None):
-    collection_ref = db.collection(collectionName)
-    collection_ref_likedislike_userIds = collection_ref.document(userId)
-    collection_ref_second_child = collection_ref_likedislike_userIds.collection(collectionNameChild)
-    docs = collection_ref_second_child.stream()
-    userIds = [doc.to_dict()['id'] for doc in docs]
-    return userIds
+    try:
+        collection_ref = db.collection(collectionName)
+        collection_ref_likedislike_userIds = collection_ref.document(userId)
+        collection_ref_second_child = collection_ref_likedislike_userIds.collection(collectionNameChild)
+        docs = collection_ref_second_child.stream()
+        userIds = [doc.to_dict()['id'] for doc in docs]
+        return userIds
+    except Exception as e:
+        print(traceback.format_exc())
 
 async def get_profiles_within_geohash(geohash):
     colref = async_db.collection('FilterAndLocation')

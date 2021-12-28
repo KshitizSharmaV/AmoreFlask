@@ -31,7 +31,7 @@ def fetch_profiles(decoded_claims=None):
         userId = decoded_claims['user_id']
         profilesArray = getProfiles(userId=decoded_claims['user_id'],
                                         idsAlreadyInDeck=request.json["idsAlreadyInDeck"])
-        current_app.logger.info("%s Successfully fetched profile /fetchlikesgiven" %(userId))
+        current_app.logger.info("%s Successfully fetched profile /fetchprofiles" %(userId))
         print("fetch_profiles " + str(len(profilesArray)))
         return jsonify(profilesArray)
     except Exception as e:

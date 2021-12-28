@@ -4,68 +4,33 @@ import traceback, time
 
 from ProjectConf.AuthenticationDecorators import validateCookie
 from ProjectConf.FirestoreConf import db
-from Services.FetchProfiles import getProfiles
-from Services.FetchProfiles import superLikes, getProfilesForListOfIds, superLikedBy, elitePicks
+from Services.FetchProfiles import getProfiles, getProfilesForListOfIds, likesGiven, superLikesGiven, dislikesGiven, likesReceived, dislikesLikesReceived, superLikesReceived, elitePicks
 
 app_super_likes_dislikes = Blueprint('AppSuperLikesDislikes', __name__)
+paramsReceivedFuncMapping = {"likesGiven" : likesGiven,
+           "superLikesGiven":superLikesGiven,
+           "dislikesGiven":dislikesGiven,
+           "likesReceived":likesReceived,
+           "dislikesLikesReceived":dislikesLikesReceived,
+           "superLikesReceived":superLikesReceived,
+           "elitePicks":elitePicks}
 
-# fetch_likes_given is used to get profiles which are super liked by the user
-@current_app.route('/fetchlikesgiven', methods=['POST'])
+@current_app.route('/commonfetchprofiles', methods=['POST','GET'])
 @validateCookie
-def fetch_likes_given(decoded_claims=None):
+def fetchProfileCommonRoute(decoded_claims=None):
     """
-    :accepts:
-    just the reponse cookie and we decode the user id then get profiles superliked by the user
+    :accepts: client cookie
+    the kind of data that needs to be fetched
     """
     try:
         userId = decoded_claims['user_id']
-        idsList = superLikes(userId=decoded_claims['user_id'])
+        fromCollection = request.json['fromCollection']
+        idsList = paramsReceivedFuncMapping[fromCollection](userId=userId)
         profilesArray = getProfilesForListOfIds(listofIds=idsList)
-        current_app.logger.info("%s Successfully fetches likes given /fetchlikesgiven"  %(userId))
-        print("fetchlikesgiven " + str(len(profilesArray)))
+        current_app.logger.info("%s fetched profiles from %s: %s"  %(userId,fromCollection,str(len(profilesArray))))
         return jsonify(profilesArray)
     except Exception as e:
-        current_app.logger.exception("%s Failed to get fetch likes given in /fetchlikesgiven"  %(userId))
+        current_app.logger.exception("%s failed to fetch profiles in /commonfetchprofiles from %s"  %(userId,fromCollection))
         current_app.logger.exception(traceback.format_exc())
-    return flask.abort(401, 'An error occured in API /fetchlikesgiven')
-
-
-@current_app.route('/fetchlikesreceived', methods=['POST'])
-@validateCookie
-def fetch_likes_received(decoded_claims=None):
-    """
-    :accepts:
-    just the reponse cookie and we decode the user id then get profiles superliked by the user
-    """
-    try:
-        userId = decoded_claims['user_id']
-        idsList = superLikedBy(userId=decoded_claims['user_id'])
-        profilesArray = getProfilesForListOfIds(listofIds=idsList)
-        current_app.logger.info("%s Successfully fetches likes given /fetchlikesreceived"  %(userId))
-        print("fetch_likes_received " + str(len(profilesArray)))
-        return jsonify(profilesArray)
-    except Exception as e:
-        current_app.logger.exception("%s Failed to get fetch likes given in /fetchlikesreceived"  %(userId))
-        current_app.logger.exception(traceback.format_exc())
-    return flask.abort(401, 'An error occured in API /fetchlikesreceived')
-
-
-
-@current_app.route('/fetchelites', methods=['POST'])
-@validateCookie
-def fetch_elites(decoded_claims=None):
-    """
-    :accepts:
-    just the reponse cookie and we decode the user id then get profiles superliked by the user
-    """
-    try:
-        userId = decoded_claims['user_id']
-        idsList = elitePicks()
-        profilesArray = getProfilesForListOfIds(listofIds=idsList)
-        current_app.logger.info("%s Successfully fetches likes given /fetchlikesreceived"  %(userId))
-        print("fetch_elites " + str(len(profilesArray)))
-        return jsonify(profilesArray)
-    except Exception as e:
-        current_app.logger.exception("%s Failed to get fetch likes given in /fetchlikesreceived"  %(userId))
-        current_app.logger.exception(traceback.format_exc())
-    return flask.abort(401, 'An error occured in API /fetchlikesreceived')
+    return flask.abort(401, '%s failed to fetch profiles in /commonfetchprofiles from %s' %(userId,fromCollection))
+        
