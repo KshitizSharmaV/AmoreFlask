@@ -32,7 +32,7 @@ def exceptions(e):
     tb = traceback.format_exc()
     current_app.logger.error('%s %s %s %s %s 5xx INTERNAL SERVER ERROR\n%s',
                   ts,
-                  flask.equest.remote_addr,
+                  flask.request.remote_addr,
                   flask.request.method,
                   flask.request.scheme,
                   flask.request.full_path,
