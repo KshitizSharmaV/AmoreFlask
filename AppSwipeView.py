@@ -5,7 +5,6 @@ import traceback, time
 from ProjectConf.AuthenticationDecorators import validateCookie
 from ProjectConf.FirestoreConf import db
 from Services.FetchProfiles import getProfiles
-from MatchingEngine.MatchingEngineConnector import swipe_view_connector
 
 app_swipe_view_app = Blueprint('AppSwipeView', __name__)
 
@@ -63,14 +62,7 @@ def store_likes_dislikes_superlikes(decoded_claims=None):
         by_collection = "LikedBy" if swipe_info == "Likes" else "DislikedBy" if swipe_info == "Dislikes" else "SuperlikedBy"
         db.collection('LikesDislikes').document(swiped_user_id).collection(by_collection).document(current_user_id).set(
             {"id": current_user_id, "timestamp": time.time()})
-        
-        # Check if there is a match
-        # This checks if two users have matched
-        swipe_view_connector(current_user_id=current_user_id, 
-                            swiped_user_id=swiped_user_id)
-
-        print(current_user_id, swipe_info, swiped_user_id)
-        current_app.logger.info("%s Successfully stored likes dislikes and superlike given /fetchlikesgiven"  %(userId))
+        current_app.logger.info("%s %s %s"  %(userId,swipe_info,swiped_user_id))
         return jsonify({'status': 200})
     except Exception as e:
         current_app.logger.exception("%s Failed to get store likes, dislikes or supelikes in post request to in /storelikesdislikes"  %(userId)) 

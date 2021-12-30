@@ -3,23 +3,23 @@
 from ProjectConf.FirestoreConf import db, async_db
 import traceback
 
-def store_matches(firstUserId=None, secondUserId=None, firstUserSwipe=None, secondUserSwipe=None, firstUserNotified=None, secondUserNotified=None, timestsamp=None):
+def calculate_the_match(firstUserSwipe=None,secondUserSwipe=None):
     try:
-        print("store_matches %s %s" %(firstUserId, secondUserId))
-        data = {"firstUserId":firstUserId,
-                "secondUserId":secondUserId,
-                "firstUserSwipe":firstUserSwipe,
-                "secondUserSwipe":secondUserSwipe,
-                "firstUserNotified":firstUserNotified,
-                "timestsamp":timestsamp
-            }
-        db.collection(u'MatchingEngine').add(data)
-        return True
+        if firstUserSwipe == "Likes":
+            if secondUserSwipe == "Likes": return "Match"
+            if secondUserSwipe == "Superlikes": return "Match"
+            if secondUserSwipe == "Dislikes": return "NoMatch"
+        elif firstUserSwipe == "Superlikes":
+            if secondUserSwipe == "Like": return "Match"
+            if secondUserSwipe == "Dislikes": return "NoMatch"
+            if secondUserSwipe == "Superlikes": return "Match"
+        elif firstUserSwipe == "Dislikes":
+            if secondUserSwipe == "Superlikes": return "NoMatch"
+            if secondUserSwipe == "Likes": return "NoMatch"
+            if secondUserSwipe == "Dislikes": return "NoMatch"
     except Exception as e:
         print(traceback.format_exc())        
-        print(e)   
         return False     
-
 
 
 
