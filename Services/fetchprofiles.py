@@ -128,7 +128,7 @@ def get_profiles_from_subcollection(collectionName=None, userId=None, collection
     try:
         collection_ref = db.collection(collectionName)
         collection_ref_likedislike_userIds = collection_ref.document(userId)
-        collection_ref_second_child = collection_ref_likedislike_userIds.collection(collectionNameChild)
+        collection_ref_second_child = collection_ref_likedislike_userIds.collection(collectionNameChild).order_by(u'timestamp', direction=firestore.Query.DESCENDING)
         docs = collection_ref_second_child.stream()
         userIds = [doc.to_dict()['id'] for doc in docs]
         return userIds
