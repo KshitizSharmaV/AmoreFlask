@@ -82,6 +82,15 @@ def elitePicks(userId=None):
 # Async functions to be used internally for service jobs
 ####################################
 
+# Get all profiles which user Liked
+async def user_liked_profiles(userId=None):
+    return await async_get_profiles_from_subcollection(collectionName=u'LikesDislikes',userId=userId,collectionNameChild=u'Likes')
+# Get all profiles which user disliked 
+async def user_disliked_profiles(userId=None):
+    return await async_get_profiles_from_subcollection(collectionName=u'LikesDislikes',userId=userId,collectionNameChild=u'Dislikes')
+# All Profiles which disliked the user
+async def user_superliked_profiles(userId=None):
+    return await async_get_profiles_from_subcollection(collectionName=u'LikesDislikes',userId=userId,collectionNameChild=u'Superlikes')
 # All Profiles which liked the user
 async def profiles_which_liked_user(userId=None):
     return await async_get_profiles_from_subcollection(collectionName=u'LikesDislikes',userId=userId,collectionNameChild=u'LikedBy')
@@ -91,6 +100,8 @@ async def profiles_which_superliked_user(userId=None):
 # All Profiles which disliked the user
 async def profiles_which_disliked_user(userId=None):
     return await async_get_profiles_from_subcollection(collectionName=u'LikesDislikes',userId=userId,collectionNameChild=u'DislikedBy')
+
+
 
 # Get Profiles of list of ids
 def getProfilesForListOfIds(listofIds=None):

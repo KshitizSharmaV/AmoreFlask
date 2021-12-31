@@ -15,6 +15,7 @@ paramsReceivedFuncMapping = {"likesGiven" : likesGiven,
            "superLikesReceived":superLikesReceived,
            "elitePicks":elitePicks}
 
+# Common route to be called from Elite, Likes Given and Likes Received Views
 @current_app.route('/commonfetchprofiles', methods=['POST','GET'])
 @validateCookie
 def fetchProfileCommonRoute(decoded_claims=None):

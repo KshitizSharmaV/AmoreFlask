@@ -1,7 +1,14 @@
-from Services.ProfileGradingEngine import *
+import asyncio
+import pandas as pd
+from Services.ProfileGradingEngine import calculate_total_score, store_profile_grading_firestore
+
+weights = {"popularity_score_weight":0.35,
+           "profile_completion_score_weight":0.15,
+           "activity_score_weight":0.20,
+           "matching_score_weight":0.30}
 
 async def main():
-    tasks = await asyncio.gather(*[calculate_total_score(userId=id) for id in
+    all_profile_scores = await asyncio.gather(*[calculate_total_score(userId=id) for id in
                                    ['06TgfRGj5ssVFQBR', '0RNSh7XU6uxKkX95', '1KNmLbYCKBtGGeRb', '2O7Sxjk2K8Z9Zbir',
                                     '2Pnzu3gOeCMm4XqG', '4V2CAn67SvEOXq7W', '5z1WWM9GyoJPMwzK', '6M6mnXyTDWocyjOy',
                                     '7M0sJiKQi57WNlPd', '7MXV1mY9i3f1WQzE11ZdG7EvATx1', '7ZSF4qu83lBeX8Mf',
@@ -23,7 +30,18 @@ async def main():
                                     'p7Gws6QkWxz0v4lm', 'penesHeuqWtQu5ZA', 'sCZ7nWrH1uR4QfAGj6Ndz4Cp3Vv2',
                                     'wClaPCcm3Qblg5YBYO7qQdOdJdn2', 'xUNQA8a6ShBk8vg7', 'y39LCk1SCOw2gBiG',
                                     'yCvln20Ent2yvYf5', 'zI9DqdXcrEenpKk8QjccnNVY4KA3', 'zopU4FMeBKzzQx7z']])
+    all_profile_scores_df = pd.DataFrame(all_profile_scores)
+    all_profile_scores_df = all_profile_scores_df.set_index('userId')
+    # normalize data
+    normalized_all_profile_scores_df=(all_profile_scores_df-all_profile_scores_df.min())/(all_profile_scores_df.max()-all_profile_scores_df.min())
+    for columnName in list(normalized_all_profile_scores_df.columns):
+        normalized_all_profile_scores_df[columnName + "_weighted"]= normalized_all_profile_scores_df[columnName] * weights[columnName+"_weight"]
+    normalized_all_profile_scores_df["total_score"] = normalized_all_profile_scores_df[[name for name in normalized_all_profile_scores_df.columns if "weighted" in name]].sum(axis=1)
+    normalized_all_profile_scores_df["user_rank"] = normalized_all_profile_scores_df["total_score"].rank(ascending=False)
 
+    print(normalized_all_profile_scores_df)
+
+    all_profile_scores_status = await asyncio.gather(*[store_profile_grading_firestore(userId=row[0],userData=row[1]) for row in  normalized_all_profile_scores_df.iterrows()])
 
 if __name__ == '__main__':
     asyncio.run(main())
