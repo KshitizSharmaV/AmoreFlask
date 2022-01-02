@@ -35,8 +35,7 @@ def getProfiles(userId=None, idsAlreadyInDeck=None):
 def profilesAlreadySeenByUser(userId=None):
     idsAlreadySeenByUser = []
     docs = db.collection('LikesDislikes').document(userId).collection("Given").stream()
-    for doc in docs:
-        idsAlreadySeenByUser.append(doc.to_dict()['id'])
+    _ = [idsAlreadySeenByUser.append(doc.id) for doc in docs]
     return idsAlreadySeenByUser
 
 
@@ -47,21 +46,21 @@ def profilesAlreadySeenByUser(userId=None):
 ####################################
 # Profile Id liked by user
 def likesGiven(userId=None):
-    return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId, collectionNameChild=u'Likes')
+    return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId, collectionNameChild=u'Given', matchFor="Likes")
 # Profile Id superliked by user
 def superLikesGiven(userId=None):
-    return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId, collectionNameChild=u'Superlikes')
+    return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId, collectionNameChild=u'Given', matchFor="Superlikes")
 # Profilee Id dis-liked by user
 def dislikesGiven(userId=None):
-    return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId, collectionNameChild=u'Dislikes')
+    return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId, collectionNameChild=u'Given', matchFor="Dislikes")
 def likesReceived(userId=None):
-    return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId,collectionNameChild=u'LikedBy')
+    return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId,collectionNameChild=u'Received', matchFor="Likes")
 # Profile Id superliked by user
 def dislikesLikesReceived(userId=None):
-    return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId, collectionNameChild=u'DislikedBy')
+    return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId, collectionNameChild=u'Received', matchFor="Superlikes")
 # Profilee Id dis-liked by user
 def superLikesReceived(userId=None):
-    return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId, collectionNameChild=u'SuperlikedBy')
+    return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId, collectionNameChild=u'Received', matchFor="Dislikes")
 def elitePicks(userId=None):
     try:
         profile_ref = db.collection('ProfilesGrading')
@@ -83,23 +82,22 @@ def elitePicks(userId=None):
 
 # Get all profiles which user Liked
 async def user_liked_profiles(userId=None):
-    return await async_get_profiles_from_subcollection(collectionName=u'LikesDislikes',userId=userId,collectionNameChild=u'Likes')
+    return await async_get_profiles_from_subcollection(collectionName=u'LikesDislikes',userId=userId,collectionNameChild=u'Given', matchFor="Likes")
 # Get all profiles which user disliked 
 async def user_disliked_profiles(userId=None):
-    return await async_get_profiles_from_subcollection(collectionName=u'LikesDislikes',userId=userId,collectionNameChild=u'Dislikes')
+    return await async_get_profiles_from_subcollection(collectionName=u'LikesDislikes',userId=userId,collectionNameChild=u'Given', matchFor="Superlikes")
 # All Profiles which disliked the user
 async def user_superliked_profiles(userId=None):
-    return await async_get_profiles_from_subcollection(collectionName=u'LikesDislikes',userId=userId,collectionNameChild=u'Superlikes')
+    return await async_get_profiles_from_subcollection(collectionName=u'LikesDislikes',userId=userId,collectionNameChild=u'Given', matchFor="Dislikes")
 # All Profiles which liked the user
 async def profiles_which_liked_user(userId=None):
-    return await async_get_profiles_from_subcollection(collectionName=u'LikesDislikes',userId=userId,collectionNameChild=u'LikedBy')
+    return await async_get_profiles_from_subcollection(collectionName=u'LikesDislikes',userId=userId,collectionNameChild=u'Received', matchFor="Likes")
 # All Profiles which superliked the user
 async def profiles_which_superliked_user(userId=None):
-    return await async_get_profiles_from_subcollection(collectionName=u'LikesDislikes',userId=userId,collectionNameChild=u'SuperlikedBy')
+    return await async_get_profiles_from_subcollection(collectionName=u'LikesDislikes',userId=userId,collectionNameChild=u'Received', matchFor="Superlikes")
 # All Profiles which disliked the user
 async def profiles_which_disliked_user(userId=None):
-    return await async_get_profiles_from_subcollection(collectionName=u'LikesDislikes',userId=userId,collectionNameChild=u'DislikedBy')
-
+    return await async_get_profiles_from_subcollection(collectionName=u'LikesDislikes',userId=userId,collectionNameChild=u'Received', matchFor="Dislikes")
 
 
 # Get Profiles of list of ids
@@ -117,12 +115,11 @@ async def async_get_profile_for_id(profileId=None):
     return doctemp
 
 # Get list of proile ids from a certain collection
-async def async_get_profiles_from_subcollection(collectionName=None, userId=None, collectionNameChild=None):
-    collection_ref = async_db.collection(collectionName)
-    collection_ref_likedislike_userIds = collection_ref.document(userId)
-    collection_ref_second_child = collection_ref_likedislike_userIds.collection(collectionNameChild)
-    docs = collection_ref_second_child.stream()
-    userIds = [doc.to_dict()['id'] async for doc in docs]
+async def async_get_profiles_from_subcollection(collectionName=None, userId=None, collectionNameChild=None, matchFor=None):
+    userIds = []
+    docs = db.collection(collectionName).document(userId).collection(collectionNameChild).where(u'swipe', u'==', matchFor).order_by(
+    u'timestamp', direction=firestore.Query.DESCENDING).stream()
+    _ = [userIds.append(doc.id) for doc in docs]
     return userIds
 
 # Get profile for a certain id
@@ -134,13 +131,12 @@ def get_profile_for_id(profileId=None):
     return doctemp
 
 # Get list of proile ids from a certain collection
-def get_profiles_from_subcollection(collectionName=None, userId=None, collectionNameChild=None):
+def get_profiles_from_subcollection(collectionName=None, userId=None, collectionNameChild=None, matchFor=None):
     try:
-        collection_ref = db.collection(collectionName)
-        collection_ref_likedislike_userIds = collection_ref.document(userId)
-        collection_ref_second_child = collection_ref_likedislike_userIds.collection(collectionNameChild).order_by(u'timestamp', direction=firestore.Query.DESCENDING)
-        docs = collection_ref_second_child.stream()
-        userIds = [doc.to_dict()['id'] for doc in docs]
+        userIds = []
+        docs = db.collection(collectionName).document(userId).collection(collectionNameChild).where(u'swipe', u'==', matchFor).order_by(
+            u'timestamp', direction=firestore.Query.DESCENDING).stream()
+        _ = [userIds.append(doc.id) for doc in docs]
         return userIds
     except Exception as e:
         print(traceback.format_exc())
