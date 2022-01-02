@@ -34,10 +34,9 @@ def getProfiles(userId=None, idsAlreadyInDeck=None):
 # Caching ? - Next Stage
 def profilesAlreadySeenByUser(userId=None):
     idsAlreadySeenByUser = []
-    collection_ref = db.collection('LikesDislikes').document(userId).collections()
-    for collection in collection_ref:
-        for doc in collection.stream():
-            idsAlreadySeenByUser.append(doc.to_dict()['id'])
+    docs = db.collection('LikesDislikes').document(userId).collection("Given").stream()
+    for doc in docs:
+        idsAlreadySeenByUser.append(doc.to_dict()['id'])
     return idsAlreadySeenByUser
 
 

@@ -57,13 +57,8 @@ def upgrade_like_to_superlike(decoded_claims=None):
         swipe_info = request.json['swipeInfo']
         swiped_user_id = request.json['swipedUserID']
 
-        db.collection('LikesDislikes').document(current_user_id).collection('Likes').document(swiped_user_id).delete()
-        db.collection('LikesDislikes').document(current_user_id).collection(swipe_info).document(swiped_user_id).set(
-            {"id": swiped_user_id, "timestamp": time.time()})
-        by_collection = "LikedBy" if swipe_info == "Likes" else "DislikedBy" if swipe_info == "Dislikes" else "SuperlikedBy"
-        db.collection('LikesDislikes').document(swiped_user_id).collection('LikedBy').document(current_user_id).delete()
-        db.collection('LikesDislikes').document(swiped_user_id).collection(by_collection).document(current_user_id).set(
-            {"id": current_user_id, "timestamp": time.time()})
+        db.collection('LikesDislikes').document(current_user_id).collection("Given").document(swiped_user_id).set({"swipe":swipe_info,"timestamp": time.time()})
+        db.collection('LikesDislikes').document(swiped_user_id).collection("Received").document(current_user_id).set({"swipe":swipe_info,"timestamp": time.time()})
         print("Successfully rewinded", current_user_id, swipe_info, swiped_user_id)
         current_app.logger.info(f" Successfully rewinded {swipe_info} by {userId}")
         return jsonify({'status': 200})

@@ -9,7 +9,6 @@ from time import strftime
 app = Flask(__name__)
 
 from ProjectConf.FirestoreConf import db
-# from ProjectConf.LoggerConf import logger
 from ProjectConf.AuthenticationDecorators import auth_decorators_app, validateCookie
 with app.app_context():
     from AppAuthentication import auth_app

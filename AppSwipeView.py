@@ -57,11 +57,8 @@ def store_likes_dislikes_superlikes(decoded_claims=None):
         current_user_id = request.json['currentUserID']
         swipe_info = request.json['swipeInfo']
         swiped_user_id = request.json['swipedUserID']
-        db.collection('LikesDislikes').document(current_user_id).collection(swipe_info).document(swiped_user_id).set(
-            {"id": swiped_user_id, "timestamp": time.time()})
-        by_collection = "LikedBy" if swipe_info == "Likes" else "DislikedBy" if swipe_info == "Dislikes" else "SuperlikedBy"
-        db.collection('LikesDislikes').document(swiped_user_id).collection(by_collection).document(current_user_id).set(
-            {"id": current_user_id, "timestamp": time.time()})
+        db.collection('LikesDislikes').document(current_user_id).collection("Given").document(swiped_user_id).set({"swipe":swipe_info,"timestamp": time.time()})
+        db.collection('LikesDislikes').document(swiped_user_id).collection("Received").document(current_user_id).set({"swipe":swipe_info, "timestamp": time.time()})
         current_app.logger.info("%s %s %s"  %(userId,swipe_info,swiped_user_id))
         return jsonify({'status': 200})
     except Exception as e:
@@ -87,10 +84,8 @@ def rewind_likes_dislikes_superlikes(decoded_claims=None):
         current_user_id = request.json['currentUserID']
         swipe_info = request.json['swipeInfo']
         swiped_user_id = request.json['swipedUserID']
-        db.collection('LikesDislikes').document(current_user_id).collection(swipe_info).document(swiped_user_id).delete()
-        by_collection = "LikedBy" if swipe_info == "Likes" else "DislikedBy" if swipe_info == "Dislikes" else "SuperlikedBy"
-        db.collection('LikesDislikes').document(swiped_user_id).collection(by_collection).document(current_user_id).delete()
-        print("Successfully rewinded", current_user_id, swipe_info, swiped_user_id)
+        db.collection('LikesDislikes').document(current_user_id).collection("Given").document(swiped_user_id).delete()
+        db.collection('LikesDislikes').document(swiped_user_id).collection("Received").document(current_user_id).delete()
         current_app.logger.info(f" Successfully rewinded {swipe_info} by {userId}")
         return jsonify({'status': 200})
     except Exception as e:
