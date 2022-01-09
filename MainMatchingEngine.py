@@ -6,10 +6,16 @@ import traceback
 import time
 import logging
 from datetime import datetime
+import firebase_admin
+from firebase_admin import credentials, firestore, auth
 from logging.handlers import TimedRotatingFileHandler
 
-from ProjectConf.FirestoreConf import async_db, db
+# Firestore connection
+cred = credentials.Certificate('serviceAccountKey.json')
+default_app = firebase_admin.initialize_app(cred)
+db = firestore.client()
 
+# Log Settings
 LOG_FILENAME = datetime.now().strftime("%H_%M_%d_%m_%Y")+".log"
 logHandler = TimedRotatingFileHandler(f'Logs/MatchingEngine/{LOG_FILENAME}',when="midnight")
 logFormatter = logging.Formatter(f'%(asctime)s %(levelname)s %(threadName)s : %(message)s')
@@ -17,7 +23,6 @@ logHandler.setFormatter( logFormatter )
 logger = logging.getLogger(f'Logs/MatchingEngine/{LOG_FILENAME}')
 logger.addHandler( logHandler )
 logger.setLevel( logging.INFO )
-
 
 # logic to check the match between the 2 users
 def calculate_the_match(firstUserSwipe=None,secondUserSwipe=None):
@@ -42,6 +47,7 @@ def calculate_the_match(firstUserSwipe=None,secondUserSwipe=None):
 # When a user swipes the LikesDislikes collection is updated, the listener listens to update and calls this function
 # for the user who just swiped, send the id of user who just swiped to function check_the_match
 def check_the_subcollection_for_matches(giverId=None):
+    logger.info(f"Check {giverId} Given subcollection")
     # we fetch only the newSwipes by Checking if matchVerified is not True
     newSwipes = db.collection("LikesDislikes").document(giverId).collection("Given").where(u'matchVerified', u'==', False).stream()
     for swipe in newSwipes:
@@ -50,7 +56,7 @@ def check_the_subcollection_for_matches(giverId=None):
         # Data of user who gave the swipe
         giverSwipeData = swipe.to_dict()
         # Get the doc for user who received the swipe
-        receiverSwipeDataDoc =  db.collection("LikesDislikes").document(receiverId).collection("Given").document(receiverId).get()
+        receiverSwipeDataDoc =  db.collection("LikesDislikes").document(receiverId).collection("Given").document(giverId).get()
         receiverSwipeData = receiverSwipeDataDoc.to_dict()
         # check if receiverSwipeData is None
         # if below condition is true that means this is second swipe. that means both users have swiped on each other
@@ -76,11 +82,13 @@ def check_the_subcollection_for_matches(giverId=None):
             logger.info(f'{giverId} waiting on {receiverId} to swipe')
         # set the matchVerified = True, because we have processed this new swipe
         db.collection("LikesDislikes").document(giverId).collection("Given").document(receiverId).update({'matchVerified':True})
+    # set the wasUpdated = False, because we processed the change
+    db.collection("LikesDislikes").document(giverId).update({'wasUpdated':False})
+
     
 # here each change that is listened to is processed
 def match_the_swipe(change=None):
     try:
-        logger.error("##############")
         if change.type.name == 'ADDED':
             logger.info(f'{change.document.id} added ')
             _ = check_the_subcollection_for_matches(giverId=change.document.id)
@@ -108,13 +116,13 @@ def matching_engine_trigger():
     except Exception as e:
         logger.error("Error occured in triggering matching engine")
         logger.error(traceback.format_exc())
-        logger.warning("Un-suscribed from all Matching Engine")
+        logger.warning("Un-suscribed from Matching Engine")
         return False               
     # Unsuscribe from all the listeners
     # query_watch.unsubscribe()
 
+callback_done = threading.Event()
 if __name__ == '__main__':
-    callback_done = threading.Event()
     matching_engine_trigger()
     while True:
         time.sleep(1)
