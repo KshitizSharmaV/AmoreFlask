@@ -47,7 +47,6 @@ def calculate_the_match(firstUserSwipe=None,secondUserSwipe=None):
 # When a user swipes the LikesDislikes collection is updated, the listener listens to update and calls this function
 # for the user who just swiped, send the id of user who just swiped to function check_the_match
 def check_the_subcollection_for_matches(giverId=None):
-    logger.info(f"Check {giverId} Given subcollection")
     # we fetch only the newSwipes by Checking if matchVerified is not True
     newSwipes = db.collection("LikesDislikes").document(giverId).collection("Given").where(u'matchVerified', u'==', False).stream()
     for swipe in newSwipes:
@@ -90,12 +89,13 @@ def check_the_subcollection_for_matches(giverId=None):
 def match_the_swipe(change=None):
     try:
         if change.type.name == 'ADDED':
-            logger.info(f'{change.document.id} added ')
+            #logger.info(f'{change.document.id} added ')
             _ = check_the_subcollection_for_matches(giverId=change.document.id)
         elif change.type.name == 'MODIFIED':
             logger.info(f'{change.document.id} modified')
         elif change.type.name == 'REMOVED':
-            logger.info(f'{change.document.id} removed')
+            #logger.info(f'{change.document.id} removed')
+            pass
     except Exception as e:
         logger.error("Error occrured while processing the new swipe")
         logger.error(traceback.format_exc())
