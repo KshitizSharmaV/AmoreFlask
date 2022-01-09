@@ -16,7 +16,7 @@ with app.app_context():
     from AppSwipeView import app_swipe_view_app
 from Services.FetchProfiles import get_profiles_within_radius,getProfiles
 
-logging.basicConfig(filename='record.log', level=logging.DEBUG, format=f'%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s')
+logging.basicConfig(filename='Logs/app.log', level=logging.DEBUG, format=f'%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s')
 app.logger.setLevel(logging.INFO)
 
 @app.route('/getgeohash', methods=['POST'])

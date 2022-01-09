@@ -57,10 +57,10 @@ def upgrade_like_to_superlike(decoded_claims=None):
         swipe_info = request.json['swipeInfo']
         swiped_user_id = request.json['swipedUserID']
 
-        db.collection('LikesDislikes').document(current_user_id).collection("Given").document(swiped_user_id).set({"swipe":swipe_info,"timestamp": time.time()})
+        db.collection('LikesDislikes').document(current_user_id).set({"wasUpdated":True})
+        db.collection('LikesDislikes').document(current_user_id).collection("Given").document(swiped_user_id).set({"swipe":swipe_info,"timestamp": time.time(),'matchVerified':False})
         db.collection('LikesDislikes').document(swiped_user_id).collection("Received").document(current_user_id).set({"swipe":swipe_info,"timestamp": time.time()})
-        print("Successfully rewinded", current_user_id, swipe_info, swiped_user_id)
-        current_app.logger.info(f" Successfully rewinded {swipe_info} by {userId}")
+        current_app.logger.info(f" Successfullu upgraded from like to superlike {swipe_info} by {userId}")
         return jsonify({'status': 200})
     except Exception as e:
         current_app.logger.exception("%s Failed to get store likes, dislikes or supelikes in post request to in /storelikesdislikes"  %(userId)) 

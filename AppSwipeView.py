@@ -57,7 +57,8 @@ def store_likes_dislikes_superlikes(decoded_claims=None):
         current_user_id = request.json['currentUserID']
         swipe_info = request.json['swipeInfo']
         swiped_user_id = request.json['swipedUserID']
-        db.collection('LikesDislikes').document(current_user_id).collection("Given").document(swiped_user_id).set({"swipe":swipe_info,"timestamp": time.time()})
+        db.collection('LikesDislikes').document(current_user_id).set({"wasUpdated":True})
+        db.collection('LikesDislikes').document(current_user_id).collection("Given").document(swiped_user_id).set({"swipe":swipe_info,"timestamp": time.time(),'matchVerified':False})
         db.collection('LikesDislikes').document(swiped_user_id).collection("Received").document(current_user_id).set({"swipe":swipe_info, "timestamp": time.time()})
         current_app.logger.info("%s %s %s"  %(userId,swipe_info,swiped_user_id))
         return jsonify({'status': 200})
@@ -84,6 +85,7 @@ def rewind_likes_dislikes_superlikes(decoded_claims=None):
         current_user_id = request.json['currentUserID']
         swipe_info = request.json['swipeInfo']
         swiped_user_id = request.json['swipedUserID']
+        db.collection('LikesDislikes').document(current_user_id).set({"wasUpdated":True})
         db.collection('LikesDislikes').document(current_user_id).collection("Given").document(swiped_user_id).delete()
         db.collection('LikesDislikes').document(swiped_user_id).collection("Received").document(current_user_id).delete()
         current_app.logger.info(f" Successfully rewinded {swipe_info} by {userId}")
