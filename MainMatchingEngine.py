@@ -87,6 +87,9 @@ def check_the_subcollection_for_matches(giverId=None):
 
     
 # here each change that is listened to is processed
+# each change can be of 3 types Added, Modified or Removed, these are 3 properties of firebase itself
+# we only want to action when a new swipe was made
+# TODO - We also want to consider what happens when a swipe is modified, what if a user upgrades or remove the like or dislike
 def match_the_swipe(change=None):
     try:
         if change.type.name == 'ADDED':

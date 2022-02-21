@@ -14,6 +14,7 @@ with app.app_context():
     from AppAuthentication import auth_app
     from AppSuperLikesDislikes import app_super_likes_dislikes
     from AppSwipeView import app_swipe_view_app
+    from AppStripePayment import payment_sheet, fetch_pricing
 from Services.FetchProfiles import get_profiles_within_radius,getProfiles
 
 logging.basicConfig(filename='Logs/app.log', level=logging.DEBUG, format=f'%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s')
