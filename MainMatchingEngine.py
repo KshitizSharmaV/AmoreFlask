@@ -2,6 +2,7 @@
 ###### Engine : Matching Engine
 # Trigger this file to run Matching engine
 #################################################
+import os
 import threading
 import traceback
 import time
@@ -18,6 +19,8 @@ db = firestore.client()
 
 # Log Settings
 LOG_FILENAME = datetime.now().strftime("%H_%M_%d_%m_%Y")+".log"
+if not os.path.exists('Logs/MatchingEngine/'):
+    os.makedirs('Logs/MatchingEngine/')
 logHandler = TimedRotatingFileHandler(f'Logs/MatchingEngine/{LOG_FILENAME}',when="midnight")
 logFormatter = logging.Formatter(f'%(asctime)s %(levelname)s %(threadName)s : %(message)s')
 logHandler.setFormatter( logFormatter )
@@ -68,15 +71,28 @@ def check_the_subcollection_for_matches(giverId=None):
             # both users swiped on each other
             logger.info(f'{match}: {giverId} and {receiverId} both swiped on each other')
             # write the match to firebase
-            db.collection(u'MatchingEngine').add({"firstUserId":receiverId,
-                "secondUserId":giverId,
-                "firstUserSwipe":receiverSwipeData["swipe"],
-                "secondUserSwipe":giverSwipeData["swipe"],
-                "firstUserNotified":False,
-                "secondUserNotified":False,
-                "timestsamp":time.time(),
-                "matchingInfo":match
-            })
+            if match == 'Match':
+                print("Match Encountered")
+                print(f'{match}: {giverId} and {receiverId} both swiped on each other')
+                db.collection("LikesDislikes").document(receiverId).collection("Match").document(giverId).set({"id": giverId, "timestamp": time.time()})
+                db.collection("LikesDislikes").document(giverId).collection("Match").document(receiverId).set({"id": receiverId, "timestamp": time.time()})
+                giver_profile = db.collection("Profiles").document(giverId).get().to_dict()
+                receiver_profile = db.collection("Profiles").document(receiverId).get().to_dict()
+                db.collection("RecentChats").document(receiverId).collection("Messages").document(giverId).set({"fromId": receiverId, "toId": giverId, 
+                "timestamp": datetime.now(), "lastText": "", "user": {"firstName": giver_profile["firstName"], "lastName": giver_profile["lastName"], 
+                "image1": giver_profile["image1"], "id": giverId}})
+                db.collection("RecentChats").document(giverId).collection("Messages").document(receiverId).set({"fromId": giverId, "toId": receiverId, 
+                "timestamp": datetime.now(), "lastText": "", "user": {"firstName": receiver_profile["firstName"], "lastName": receiver_profile["lastName"], 
+                "image1": receiver_profile["image1"], "id": receiverId}})
+            # db.collection(u'MatchingEngine').add({"firstUserId":receiverId,
+            #     "secondUserId":giverId,
+            #     "firstUserSwipe":receiverSwipeData["swipe"],
+            #     "secondUserSwipe":giverSwipeData["swipe"],
+            #     "firstUserNotified":False,
+            #     "secondUserNotified":False,
+            #     "timestsamp":time.time(),
+            #     "matchingInfo":match
+            # })
         else:
             # first swipe, wait for the second user to swipe too
             logger.info(f'{giverId} waiting on {receiverId} to swipe')
