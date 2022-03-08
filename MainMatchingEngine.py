@@ -80,10 +80,10 @@ def check_the_subcollection_for_matches(giverId=None):
                 receiver_profile = db.collection("Profiles").document(receiverId).get().to_dict()
                 db.collection("RecentChats").document(receiverId).collection("Messages").document(giverId).set({"fromId": receiverId, "toId": giverId, 
                 "timestamp": datetime.now(), "lastText": "", "user": {"firstName": giver_profile["firstName"], "lastName": giver_profile["lastName"], 
-                "image1": giver_profile["image1"], "id": giverId}})
+                "image1": giver_profile["image1"], "id": giverId}, "otherUserUpdated": True})
                 db.collection("RecentChats").document(giverId).collection("Messages").document(receiverId).set({"fromId": giverId, "toId": receiverId, 
                 "timestamp": datetime.now(), "lastText": "", "user": {"firstName": receiver_profile["firstName"], "lastName": receiver_profile["lastName"], 
-                "image1": receiver_profile["image1"], "id": receiverId}})
+                "image1": receiver_profile["image1"], "id": receiverId}, "otherUserUpdated": True})
             # db.collection(u'MatchingEngine').add({"firstUserId":receiverId,
             #     "secondUserId":giverId,
             #     "firstUserSwipe":receiverSwipeData["swipe"],

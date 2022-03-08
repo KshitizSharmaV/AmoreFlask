@@ -7,3 +7,7 @@
 *.DS_Store
 Services/__pycache__/__init__.cpython-38.pyc
 Services/__pycache__/fetchprofiles.cpython-38.pyc
+.ipynb_checkpoints/Untitled-checkpoint.ipynb
+Untitled.ipynb
+test.py
+MyFile.txt
