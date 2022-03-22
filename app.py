@@ -5,8 +5,10 @@ import time
 import geohash2
 import logging
 from time import strftime
+import asyncio
 
 app = Flask(__name__)
+loop = asyncio.get_event_loop()
 
 from ProjectConf.FirestoreConf import db
 from ProjectConf.AuthenticationDecorators import auth_decorators_app, validateCookie
@@ -16,6 +18,7 @@ with app.app_context():
     from AppSwipeView import app_swipe_view_app
     from AppStripePayment import payment_sheet, fetch_pricing
 from Services.FetchProfiles import get_profiles_within_radius,getProfiles
+from Services.UnmatchService import unmatch_production_function, unmatch_task_function
 
 logging.basicConfig(filename='Logs/app.log', level=logging.DEBUG, format=f'%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s')
 app.logger.setLevel(logging.INFO)
@@ -80,7 +83,7 @@ def fetch_profiles_within_given_radius(decoded_claims=None):
 
 
 
-# every time a user swipes the application calls this api to store data in collection
+# Invoked on Report Profile request from a user.
 @app.route('/reportProfile', methods=['POST']) 
 @validateCookie
 def report_profiles(decoded_claims=None):
@@ -92,7 +95,8 @@ def report_profiles(decoded_claims=None):
     """
     try:
         userId = decoded_claims['user_id']
-        reported_profile_id = request.json['swipedProfileID']
+        current_user_id = request.json['current_user_id']
+        reported_profile_id = request.json['other_user_id']
         reason_given = request.json['reasonGiven']
         description_given = request.json['descriptionGiven']
         db.collection('ReportedProfile').document(reported_profile_id).collection(userId).document("ReportingDetails").set({"reportedById": userId, 
@@ -101,13 +105,38 @@ def report_profiles(decoded_claims=None):
                                                                         "descriptionGiven":description_given,
                                                                         "timestamp": time.time()
                                                                     })
+        results = loop.run_until_complete(unmatch_task_function(current_user_id, reported_profile_id))
         app.logger.info("%s Successfully reported profile /fetchprofileswithinradius"  %(userId))
         return jsonify({'status': 200})
     except Exception as e:
         app.logger.exception("%s Failed to report profile on /reportProfile" %(userId))
         app.logger.exception(traceback.format_exc())
-    return flask.abort(401, 'An error occured in API /reportProfile')    
+    return flask.abort(401, 'An error occured in API /reportProfile')
 
+# Invoked on Unmatch request from a user.
+@app.route('/unmatch', methods=['POST']) 
+@validateCookie
+def unmatch(decoded_claims=None):
+    """
+    Endpoint to store likes, superlikes, dislikes, liked_by, disliked_by, superliked_by for users
+        Body of Request contains following payloads:
+        - current user id
+        - reported profile id
+    """
+    try:
+        start = time.time()
+        userId = decoded_claims['user_id']
+        current_user_id = request.json['current_user_id']
+        other_user_id = request.json['other_user_id']
+        # results = unmatch_production_function(current_user_id=current_user_id, other_user_id=other_user_id)
+        results = loop.run_until_complete(unmatch_task_function(current_user_id, other_user_id))
+        app.logger.info(f"Successfully unmatched {other_user_id} from {current_user_id}'s matches.")
+        app.logger.info(f"API Execution Time: {time.time() - start}")
+        return jsonify({'status': 200})
+    except Exception as e:
+        app.logger.exception(f"Failed to unmatch {other_user_id} from {current_user_id}'s matches.")
+        app.logger.exception(traceback.format_exc())
+    return flask.abort(401, 'An error occured in API /unmatch') 
 
 if __name__ == '__main__':
     app.run(debug=True)
