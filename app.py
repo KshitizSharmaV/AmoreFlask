@@ -5,11 +5,11 @@ import time
 import geohash2
 import logging
 from time import strftime
-import asyncio
+# import asyncio
 
 app = Flask(__name__)
-loop = asyncio.get_event_loop()
-
+# loop = asyncio.get_event_loop()
+from ProjectConf import loop
 from ProjectConf.FirestoreConf import db
 from ProjectConf.AuthenticationDecorators import auth_decorators_app, validateCookie
 with app.app_context():
