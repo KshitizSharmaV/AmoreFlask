@@ -30,6 +30,8 @@ def session_login():
         current_app.logger.info("User was successfully authenticated & cookies were generated")
         return response
     except exceptions.FirebaseError:
+        current_app.logger.exception("Firebase Error in Cookie Creation")
+        current_app.logger.exception(traceback.format_exc())
         return flask.abort(401, 'Failed to create a session cookie')
         pass
     except Exception as e:

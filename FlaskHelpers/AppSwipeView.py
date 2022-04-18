@@ -1,12 +1,14 @@
 import flask
-from flask import Blueprint, current_app,  Flask, jsonify, request
-import traceback, time
-
+from flask import Blueprint, current_app, jsonify, request
+import traceback
+from FlaskHelpers.AsyncioPlugin import run_coroutine
 from ProjectConf.AuthenticationDecorators import validateCookie
 from ProjectConf.FirestoreConf import db
-from Services.FetchProfiles import getProfiles
+from FlaskHelpers.FetchProfiles import get_profiles
+from FlaskHelpers.FirestoreFunctions import swipe_tasks_future as store_like_dislike_task
 
 app_swipe_view_app = Blueprint('AppSwipeView', __name__)
+
 
 # fetch_profiles is used to get profiles for cards in swipe view
 @current_app.route('/fetchprofiles', methods=['POST'])
@@ -28,13 +30,12 @@ def fetch_profiles(decoded_claims=None):
     - array of n uids
     """
     try:
-        userId = decoded_claims['user_id']
-        profilesArray = getProfiles(userId=decoded_claims['user_id'],
-                                        idsAlreadyInDeck=request.json["idsAlreadyInDeck"])
-        current_app.logger.info("%s Successfully fetched profile /fetchprofiles" %(userId))
-        return jsonify(profilesArray)
+        user_id = decoded_claims['user_id']
+        profiles_array = get_profiles(user_id=decoded_claims['user_id'], ids_already_in_deck=request.json["idsAlreadyInDeck"])
+        current_app.logger.info("%s Successfully fetched profile /fetchprofiles" % (user_id))
+        return jsonify(profiles_array)
     except Exception as e:
-        current_app.logger.exception("%s Failed to fetch profile in /fetchprofiles " %(userId))
+        current_app.logger.exception("%s Failed to fetch profile in /fetchprofiles " % (user_id))
         current_app.logger.exception(traceback.format_exc())
     flask.abort(401, 'An error occured in /fetchprofiles')
 
@@ -57,15 +58,17 @@ def store_likes_dislikes_superlikes(decoded_claims=None):
         current_user_id = request.json['currentUserID']
         swipe_info = request.json['swipeInfo']
         swiped_user_id = request.json['swipedUserID']
-        db.collection('LikesDislikes').document(current_user_id).collection("Given").document(swiped_user_id).set({"swipe":swipe_info,"timestamp": time.time(),'matchVerified':False})
-        db.collection('LikesDislikes').document(swiped_user_id).collection("Received").document(current_user_id).set({"swipe":swipe_info, "timestamp": time.time()})
-        db.collection('LikesDislikes').document(current_user_id).set({"wasUpdated":True})
-        current_app.logger.info("%s %s %s"  %(userId,swipe_info,swiped_user_id))
+        future = run_coroutine(store_like_dislike_task(current_user_id=current_user_id, swiped_user_id=swiped_user_id,
+                                    swipe_info=swipe_info))
+        future.result()
+        current_app.logger.info("%s %s %s" % (userId, swipe_info, swiped_user_id))
         return jsonify({'status': 200})
     except Exception as e:
-        current_app.logger.exception("%s Failed to get store likes, dislikes or supelikes in post request to in /storelikesdislikes"  %(userId)) 
+        current_app.logger.exception(
+            "%s Failed to get store likes, dislikes or supelikes in post request to in /storelikesdislikes" % (userId))
         current_app.logger.exception(traceback.format_exc())
     return flask.abort(401, 'An error occured in API /storelikesdislikes')
+
 
 # store_likes_dislikes_superlikes store likes, dislikes and superlikes in own user id and other profile being acted on
 @current_app.route('/rewindswipesingle', methods=['POST'])
@@ -87,10 +90,12 @@ def rewind_likes_dislikes_superlikes(decoded_claims=None):
         swiped_user_id = request.json['swipedUserID']
         # db.collection('LikesDislikes').document(current_user_id).set({"wasUpdated":True}) - No Need of this statement
         db.collection('LikesDislikes').document(current_user_id).collection("Given").document(swiped_user_id).delete()
-        db.collection('LikesDislikes').document(swiped_user_id).collection("Received").document(current_user_id).delete()
+        db.collection('LikesDislikes').document(swiped_user_id).collection("Received").document(
+            current_user_id).delete()
         current_app.logger.info(f" Successfully rewinded {swipe_info} by {userId}")
         return jsonify({'status': 200})
     except Exception as e:
-        current_app.logger.exception("%s Failed to get store likes, dislikes or supelikes in post request to in /storelikesdislikes"  %(userId)) 
+        current_app.logger.exception(
+            "%s Failed to get store likes, dislikes or supelikes in post request to in /storelikesdislikes" % (userId))
         current_app.logger.exception(traceback.format_exc())
     return flask.abort(401, 'An error occured in API /storelikesdislikes')
