@@ -1,13 +1,18 @@
 import flask
 from flask import Blueprint, current_app, jsonify, request
 import traceback
-from FlaskHelpers.AsyncioPlugin import run_coroutine
+from ProjectConf.AsyncioPlugin import run_coroutine
 from ProjectConf.AuthenticationDecorators import validateCookie
 from ProjectConf.FirestoreConf import db
+from ProjectConf.ReadFlaskYaml import cachingServerRoute, headers
 from FlaskHelpers.FetchProfiles import get_profiles
 from FlaskHelpers.FirestoreFunctions import swipe_tasks_future as store_like_dislike_task
+import requests
+import json
+import logging
 
 app_swipe_view_app = Blueprint('AppSwipeView', __name__)
+logger = logging.getLogger()
 
 
 # fetch_profiles is used to get profiles for cards in swipe view
@@ -32,11 +37,11 @@ def fetch_profiles(decoded_claims=None):
     try:
         user_id = decoded_claims['user_id']
         profiles_array = get_profiles(user_id=decoded_claims['user_id'], ids_already_in_deck=request.json["idsAlreadyInDeck"])
-        current_app.logger.info("%s Successfully fetched profile /fetchprofiles" % (user_id))
+        logger.info("%s Successfully fetched profile /fetchprofiles" % (user_id))
         return jsonify(profiles_array)
     except Exception as e:
-        current_app.logger.exception("%s Failed to fetch profile in /fetchprofiles " % (user_id))
-        current_app.logger.exception(traceback.format_exc())
+        logger.exception("%s Failed to fetch profile in /fetchprofiles " % (user_id))
+        logger.exception(traceback.format_exc())
     flask.abort(401, 'An error occured in /fetchprofiles')
 
 
@@ -55,18 +60,20 @@ def store_likes_dislikes_superlikes(decoded_claims=None):
         - swiped profile id
         """
         userId = decoded_claims['user_id']
-        current_user_id = request.json['currentUserID']
-        swipe_info = request.json['swipeInfo']
-        swiped_user_id = request.json['swipedUserID']
-        future = run_coroutine(store_like_dislike_task(current_user_id=current_user_id, swiped_user_id=swiped_user_id,
-                                    swipe_info=swipe_info))
-        future.result()
-        current_app.logger.info("%s %s %s" % (userId, swipe_info, swiped_user_id))
+        requestData = {
+            "currentUserId":request.json['currentUserID'],
+            "swipeInfo":request.json['swipeInfo'],
+            "swipedUserId": request.json['swipedUserID']
+        }
+        response = requests.post(f"{cachingServerRoute}/storelikesdislikesGate",
+                                data=json.dumps(requestData), 
+                                headers=headers)
+        logger.info(f"Successfully stored LikesDislikes:{request.json['currentUserID']}:{request.json['swipeInfo']}:{request.json['swipedUserID']}")
         return jsonify({'status': 200})
     except Exception as e:
-        current_app.logger.exception(
+        logger.exception(
             "%s Failed to get store likes, dislikes or supelikes in post request to in /storelikesdislikes" % (userId))
-        current_app.logger.exception(traceback.format_exc())
+        logger.exception(traceback.format_exc())
     return flask.abort(401, 'An error occured in API /storelikesdislikes')
 
 
@@ -92,10 +99,10 @@ def rewind_likes_dislikes_superlikes(decoded_claims=None):
         db.collection('LikesDislikes').document(current_user_id).collection("Given").document(swiped_user_id).delete()
         db.collection('LikesDislikes').document(swiped_user_id).collection("Received").document(
             current_user_id).delete()
-        current_app.logger.info(f" Successfully rewinded {swipe_info} by {userId}")
+        logger.info(f" Successfully rewinded {swipe_info} by {userId}")
         return jsonify({'status': 200})
     except Exception as e:
-        current_app.logger.exception(
+        logger.exception(
             "%s Failed to get store likes, dislikes or supelikes in post request to in /storelikesdislikes" % (userId))
-        current_app.logger.exception(traceback.format_exc())
+        logger.exception(traceback.format_exc())
     return flask.abort(401, 'An error occured in API /storelikesdislikes')

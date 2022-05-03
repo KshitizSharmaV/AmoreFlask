@@ -1,5 +1,6 @@
 # Profiles Fetcher
 # This will get the profiles for the swipe views
+import profile
 import traceback
 import itertools
 import asyncio
@@ -16,7 +17,8 @@ from ProjectConf.FirestoreConf import async_db, db
 
 def get_profiles(user_id=None, ids_already_in_deck=None):
     profile_ref = db.collection(u'Profiles')
-    docs = profile_ref.stream()
+    query = profile_ref.order_by("age").limit_to_last(50)
+    docs = query.get()
     # List of ids already seen by user
     ids_already_seen_by_user = profiles_already_seen_by_user(user_id=user_id)
     all_ids_to_be_excluded = ids_already_seen_by_user + ids_already_in_deck
@@ -81,7 +83,6 @@ def elite_picks(userId=None):
 async def get_profiles_for_list_of_ids(list_of_ids=None):
     profilesArray = await asyncio.gather(*[get_profile_for_id(profile_id=id) for id in list_of_ids])
     return profilesArray
-
 
 # Get profile for a certain id
 async def get_profile_for_id(profile_id=None):
