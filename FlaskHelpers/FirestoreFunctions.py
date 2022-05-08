@@ -2,6 +2,12 @@ import time
 import asyncio
 from ProjectConf.FirestoreConf import db, async_db
 
+"""
+Everything in this file updated in Amore Caching Service.
+
+Unmatch functionality from this file being used by Report Profile API, yet to be
+ported to Amore Caching Server
+"""
 
 async def was_updated_task(current_user_id):
     await async_db.collection('LikesDislikes').document(current_user_id).set({"wasUpdated": True})

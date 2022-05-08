@@ -12,7 +12,7 @@ from ProjectConf.AuthenticationDecorators import validateCookie
 from ProjectConf.FirestoreConf import db
 from FlaskHelpers.UnmatchHelper.UnmatchHelper import unmatch_task_function
 
-app_get = Blueprint('appReportProfile', __name__)
+app_report_profile = Blueprint('appReportProfile', __name__)
 logger = logging.getLogger()
 
 

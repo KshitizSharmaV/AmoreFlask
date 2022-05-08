@@ -1,5 +1,7 @@
 import asyncio
 import flask
+import requests
+import json
 from flask import Blueprint, current_app, jsonify, request
 import traceback
 import logging
@@ -10,6 +12,7 @@ from FlaskHelpers.FetchProfiles import get_profiles_for_list_of_ids, likes_given
     likes_received, dislikes_received, super_likes_received, elite_picks
 from ProjectConf.AsyncioPlugin import *
 from FlaskHelpers.FetchProfiles import get_profiles_within_radius
+from ProjectConf.ReadFlaskYaml import cachingServerRoute, headers
 
 app_super_likes_dislikes = Blueprint('AppSuperLikesDislikes', __name__)
 paramsReceivedFuncMapping = {"likesGiven": likes_given,
@@ -20,6 +23,11 @@ paramsReceivedFuncMapping = {"likesGiven": likes_given,
                              "superLikesReceived": super_likes_received,
                              "elitePicks": elite_picks}
 logger = logging.getLogger()
+
+"""
+APIs yet to be ported to Amore Caching Server
+"""
+
 
 # Common route to be called from Elite, Likes Given and Likes Received Views
 @current_app.route('/commonfetchprofiles', methods=['POST', 'GET'])
@@ -46,37 +54,6 @@ def fetch_profile_common_route(decoded_claims=None):
         logger.exception(traceback.format_exc())
     return flask.abort(401, '%s failed to fetch profiles in /commonfetchprofiles from %s' % (user_id, from_collection))
 
-
-# store_likes_dislikes_superlikes store likes, dislikes and superlikes in own user id and other profile being acted on
-@current_app.route('/upgradeliketosuperlike', methods=['POST'])
-@validateCookie
-def upgrade_like_to_superlike(decoded_claims=None):
-    """
-    Endpoint to Upgrade Like to Superlike in the likes given page, and modify appropriate firestore subcollections.
-    """
-    try:
-        """
-        Body of Request contains following payloads:
-        - current user id
-        - swipe info: Like, Dislike, Superlike
-        - swiped profile id
-
-        -- Delete entry from Likes, LikedBy
-        -- Make entry in Superlikes, SuperlikedBy
-        """
-        userId = decoded_claims['user_id']
-        current_user_id = request.json['currentUserID']
-        swipe_info = request.json['swipeInfo']
-        swiped_user_id = request.json['swipedUserID']
-        run_coroutine(like_dislike_superlike_task(current_user_id=current_user_id, swiped_user_id=swiped_user_id,
-                                                  swipe_info=swipe_info))
-        logger.info(f" Successfullu upgraded from like to superlike {swipe_info} by {userId}")
-        return jsonify({'status': 200})
-    except Exception as e:
-        logger.exception(
-            "%s Failed to get store likes, dislikes or supelikes in post request to in /storelikesdislikes" % (userId))
-        logger.exception(e)
-    return flask.abort(401, 'An error occured in API /storelikesdislikes')
 
 # fetch_profiles within given radius for cards in swipe view
 @current_app.route('/fetchprofileswithinradius', methods=['POST'])
@@ -112,3 +89,44 @@ def fetch_profiles_within_given_radius(decoded_claims=None):
             "%s Failed to get profiles within given radius locataion for user in /fetchprofileswithinradius" % (userId))
         logger.exception(e)
     return flask.abort(401, 'An error occured in API /fetchprofileswithinradius')
+
+
+"""
+APIs Ported to Amore Caching Server
+"""
+
+
+# store_likes_dislikes_superlikes store likes, dislikes and superlikes in own user id and other profile being acted on
+@current_app.route('/upgradeliketosuperlike', methods=['POST'])
+@validateCookie
+def upgrade_like_to_superlike(decoded_claims=None):
+    """
+    Endpoint to Upgrade Like to Superlike in the likes given page, and modify appropriate firestore subcollections.
+    """
+    try:
+        """
+        Body of Request contains following payloads:
+        - current user id
+        - swipe info: Like, Dislike, Superlike
+        - swiped profile id
+
+        -- Delete entry from Likes, LikedBy
+        -- Make entry in Superlikes, SuperlikedBy
+        """
+        userId = decoded_claims['user_id']
+        requestData = {
+            "currentUserId": request.json['currentUserID'],
+            "swipeInfo": request.json['swipeInfo'],
+            "swipedUserId": request.json['swipedUserID']
+        }
+        response = requests.post(f"{cachingServerRoute}/storelikesdislikesGate",
+                                 data=json.dumps(requestData),
+                                 headers=headers)
+        logger.info(
+            f"Successfully stored LikesDislikes:{request.json['currentUserID']}:{request.json['swipeInfo']}:{request.json['swipedUserID']}")
+        return jsonify({'status': 200})
+    except Exception as e:
+        logger.exception(
+            "%s Failed to get store likes, dislikes or supelikes in post request to in /storelikesdislikes" % (userId))
+        logger.exception(e)
+    return flask.abort(401, 'An error occured in API /storelikesdislikes')

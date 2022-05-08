@@ -4,6 +4,9 @@ import profile
 import traceback
 import itertools
 import asyncio
+import requests
+import json
+from ProjectConf.ReadFlaskYaml import cachingServerRoute, headers
 from google.cloud import firestore
 from ProjectConf.LoggerConf import logger
 from ProximityHash.proximityhash import *
@@ -14,18 +17,58 @@ from ProjectConf.FirestoreConf import async_db, db
 3. Caching - to be investigated further - Basic functionality functioning before - new cache for every server?
 '''
 
+"""
+Implemented in Amore Caching Service
+"""
+
 
 def get_profiles(user_id=None, ids_already_in_deck=None):
-    profile_ref = db.collection(u'Profiles')
-    query = profile_ref.order_by("age").limit_to_last(50)
-    docs = query.get()
-    # List of ids already seen by user
+    """
+    Get all profiles from Cache
+    """
+    # profile_ref = db.collection(u'Profiles')
+    # query = profile_ref.order_by("age").limit_to_last(50)
+    # docs = query.get()
+    request_body = {
+        "cacheFilterName": "Profiles*"
+    }
+    all_profiles_response = requests.get(f"{cachingServerRoute}/getallcachedprofiles",
+                                         data=json.dumps(request_body),
+                                         headers=headers)
+    # all_profiles = json.loads(all_profiles_response)
+    all_profiles = all_profiles_response.json()
+    all_profiles = (json.loads(profile) for profile in all_profiles)
+    """
+    Get List of ids already seen by user from cache
+    """
     ids_already_seen_by_user = profiles_already_seen_by_user(user_id=user_id)
     all_ids_to_be_excluded = ids_already_seen_by_user + ids_already_in_deck
-    profiles_array = [{"id": profile.id, **profile.to_dict()} for profile in docs if
-                      profile.id not in all_ids_to_be_excluded]
+    profiles_array = [{"id": profile["id"], **profile} for profile in all_profiles if
+                      profile["id"] not in all_ids_to_be_excluded]
     logger.info("Successfully sent back profiles for card swipe view")
     return profiles_array
+
+
+# Caching ? - Next Stage
+def profiles_already_seen_by_user(user_id=None):
+    """
+    Get list of ids already seen by user from cache
+    """
+    request_data = {
+        'currentUserId': user_id
+    }
+    ids_already_seen_by_user_response = requests.post(f"{cachingServerRoute}/getprofilesalreadyseen",
+                                                      data=json.dumps(request_data),
+                                                      headers=headers)
+    ids_already_seen_by_user = ids_already_seen_by_user_response.json()
+    ids_already_seen_by_user = list(ids_already_seen_by_user) if not isinstance(ids_already_seen_by_user, list) \
+        else ids_already_seen_by_user
+    return ids_already_seen_by_user
+
+
+"""
+Functions yet to be ported to Amore Caching Server
+"""
 
 
 ####################################
@@ -84,6 +127,7 @@ async def get_profiles_for_list_of_ids(list_of_ids=None):
     profilesArray = await asyncio.gather(*[get_profile_for_id(profile_id=id) for id in list_of_ids])
     return profilesArray
 
+
 # Get profile for a certain id
 async def get_profile_for_id(profile_id=None):
     profile_ref = async_db.collection('Profiles')
@@ -103,13 +147,6 @@ def get_profiles_from_subcollection(collectionName=None, userId=None, collection
         return user_ids
     except Exception as e:
         print(traceback.format_exc())
-
-
-# Caching ? - Next Stage
-def profiles_already_seen_by_user(user_id=None):
-    docs = db.collection('LikesDislikes').document(user_id).collection("Given").stream()
-    ids_already_seen_by_user = [doc.id for doc in docs]
-    return ids_already_seen_by_user
 
 
 async def get_profiles_within_geohash(geohash):

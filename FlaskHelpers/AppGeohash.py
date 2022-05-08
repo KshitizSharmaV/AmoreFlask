@@ -10,7 +10,7 @@ import geohash2
 from ProjectConf.AuthenticationDecorators import validateCookie
 from ProjectConf.FirestoreConf import db
 
-app_get = Blueprint('appGeoHash', __name__)
+app_geo_hash = Blueprint('appGeoHash', __name__)
 logger = logging.getLogger()
 
 @current_app.route('/getgeohash', methods=['POST'])
