@@ -45,13 +45,13 @@ def fetch_profile_common_route(decoded_claims=None):
         ids_list = paramsReceivedFuncMapping[from_collection](userId=user_id)
         future = run_coroutine(get_profiles_for_list_of_ids(list_of_ids=ids_list))
         profiles_array = future.result()
-        logger.info(
+        current_app.logger.info(
             "%s fetched profiles from %s: %s" % (user_id, from_collection, str(len(profiles_array))))
         return jsonify(profiles_array)
     except Exception as e:
-        logger.exception(
+        current_app.logger.exception(
             "%s failed to fetch profiles in /commonfetchprofiles from %s" % (user_id, from_collection))
-        logger.exception(traceback.format_exc())
+        current_app.logger.exception(traceback.format_exc())
     return flask.abort(401, '%s failed to fetch profiles in /commonfetchprofiles from %s' % (user_id, from_collection))
 
 
@@ -82,12 +82,12 @@ def fetch_profiles_within_given_radius(decoded_claims=None):
         radius = int(request.json['radius'])
         profilesArray = get_profiles_within_radius(userId=userId, ids_already_in_deck=idsAlreadyInDeck,
                                                    latitude=latitude, longitude=longitude, radius=radius)
-        logger.info("%s Successfully fetched profiles within radius /fetchprofileswithinradius" % (userId))
+        current_app.logger.info("%s Successfully fetched profiles within radius /fetchprofileswithinradius" % (userId))
         return jsonify(profilesArray)
     except Exception as e:
-        logger.exception(
+        current_app.logger.exception(
             "%s Failed to get profiles within given radius locataion for user in /fetchprofileswithinradius" % (userId))
-        logger.exception(e)
+        current_app.logger.exception(e)
     return flask.abort(401, 'An error occured in API /fetchprofileswithinradius')
 
 
@@ -122,11 +122,11 @@ def upgrade_like_to_superlike(decoded_claims=None):
         response = requests.post(f"{cachingServerRoute}/storelikesdislikesGate",
                                  data=json.dumps(requestData),
                                  headers=headers)
-        logger.info(
+        current_app.logger.info(
             f"Successfully stored LikesDislikes:{request.json['currentUserID']}:{request.json['swipeInfo']}:{request.json['swipedUserID']}")
         return jsonify({'status': 200})
     except Exception as e:
-        logger.exception(
+        current_app.logger.exception(
             "%s Failed to get store likes, dislikes or supelikes in post request to in /storelikesdislikes" % (userId))
-        logger.exception(e)
+        current_app.logger.exception(e)
     return flask.abort(401, 'An error occured in API /storelikesdislikes')

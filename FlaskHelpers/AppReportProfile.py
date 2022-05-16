@@ -41,9 +41,9 @@ def report_profiles(decoded_claims=None):
                                      })
         future = run_coroutine(unmatch_task_function(current_user_id, reported_profile_id))
         results = future.result()
-        logger.info("%s Successfully reported profile /reportProfile" % (userId))
+        current_app.logger.info("%s Successfully reported profile /reportProfile" % (userId))
         return jsonify({'status': 200})
     except Exception as e:
-        logger.error("%s Failed to report profile on /reportProfile" % (userId))
-        logger.exception(e)
+        current_app.logger.error("%s Failed to report profile on /reportProfile" % (userId))
+        current_app.logger.exception(e)
     return flask.abort(401, 'An error occured in API /reportProfile')

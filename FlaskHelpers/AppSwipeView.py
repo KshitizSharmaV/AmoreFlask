@@ -3,7 +3,6 @@ from flask import Blueprint, current_app, jsonify, request
 import traceback
 from ProjectConf.AsyncioPlugin import run_coroutine
 from ProjectConf.AuthenticationDecorators import validateCookie
-from ProjectConf.FirestoreConf import db
 from ProjectConf.ReadFlaskYaml import cachingServerRoute, headers
 from FlaskHelpers.FetchProfiles import get_profiles
 from FlaskHelpers.FirestoreFunctions import swipe_tasks_future as store_like_dislike_task
@@ -41,11 +40,11 @@ def fetch_profiles(decoded_claims=None):
     try:
         user_id = decoded_claims['user_id']
         profiles_array = get_profiles(user_id=user_id, ids_already_in_deck=request.json["idsAlreadyInDeck"])
-        logger.info("%s Successfully fetched profile /fetchprofiles" % (user_id))
+        current_app.logger.info("%s Successfully fetched profile /fetchprofiles" % (user_id))
         return jsonify(profiles_array)
     except Exception as e:
-        logger.exception("%s Failed to fetch profile in /fetchprofiles " % (user_id))
-        logger.exception(traceback.format_exc())
+        current_app.logger.exception("%s Failed to fetch profile in /fetchprofiles " % (user_id))
+        current_app.logger.exception(traceback.format_exc())
     flask.abort(401, 'An error occured in /fetchprofiles')
 
 
@@ -72,13 +71,13 @@ def store_likes_dislikes_superlikes(decoded_claims=None):
         response = requests.post(f"{cachingServerRoute}/storelikesdislikesGate",
                                  data=json.dumps(requestData),
                                  headers=headers)
-        logger.info(
+        current_app.logger.info(
             f"Successfully stored LikesDislikes:{request.json['currentUserID']}:{request.json['swipeInfo']}:{request.json['swipedUserID']}")
         return jsonify({'status': 200})
     except Exception as e:
-        logger.exception(
+        current_app.logger.exception(
             "%s Failed to get store likes, dislikes or supelikes in post request to in /storelikesdislikes" % (userId))
-        logger.exception(traceback.format_exc())
+        current_app.logger.exception(traceback.format_exc())
     return flask.abort(401, 'An error occured in API /storelikesdislikes')
 
 
@@ -105,10 +104,10 @@ def rewind_likes_dislikes_superlikes(decoded_claims=None):
         response = requests.post(f"{cachingServerRoute}/rewindsingleswipegate",
                                  data=json.dumps(request_data),
                                  headers=headers)
-        logger.info(f" Successfully rewinded {request.json['swipeInfo']} by {userId}")
+        current_app.logger.info(f" Successfully rewinded {request.json['swipeInfo']} by {userId}")
         return jsonify({'status': 200})
     except Exception as e:
-        logger.exception(
+        current_app.logger.exception(
             "%s Failed to rewind" % (userId))
-        logger.exception(traceback.format_exc())
+        current_app.logger.exception(traceback.format_exc())
         return flask.abort(401, 'An error occured in API /rewind')

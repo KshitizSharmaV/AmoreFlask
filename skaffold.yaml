@@ -1,0 +1,14 @@
+apiVersion: skaffold/v2beta28
+kind: Config
+metadata:
+  name: amore_flask
+build: 	
+  artifacts: 	
+    - image: flask-api 	
+      context: .
+      docker:
+        dockerfile: "Dockerfile"
+deploy: 	
+  kubectl: 	
+    manifests: 
+      - "deployment.yaml"

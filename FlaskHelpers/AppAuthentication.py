@@ -3,9 +3,13 @@ from flask import Blueprint, current_app,  Flask, jsonify, request
 from firebase_admin import auth, exceptions
 import traceback
 import datetime
+import logging.config
 
 session_cookie_expires_in = datetime.timedelta(days=7)
 auth_app = Blueprint('Authentication', __name__)
+
+
+logger = logging.getLogger(__name__)
 
 # Sesssion Cookies for all api authentication
 # Once the user has logged in on the app from the firebase : Client side authentication

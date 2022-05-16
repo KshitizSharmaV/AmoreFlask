@@ -38,10 +38,10 @@ def unmatch(decoded_claims=None):
         response = requests.post(f"{cachingServerRoute}/unmatchgate",
                                  data=json.dumps(request_data),
                                  headers=headers)
-        logger.info(f"Successfully unmatched {other_user_id} from {current_user_id}'s matches.")
-        logger.info(f"API Execution Time: {time.time() - start}")
+        current_app.logger.info(f"Successfully unmatched {other_user_id} from {current_user_id}'s matches.")
+        current_app.logger.info(f"API Execution Time: {time.time() - start}")
         return jsonify({'status': 200})
     except Exception as e:
-        logger.error("%s Failed to unmatch the profile" % (userId))
-        logger.exception(e)
+        current_app.logger.error("%s Failed to unmatch the profile" % (userId))
+        current_app.logger.exception(e)
         return flask.abort(401, 'An error occured in API /unmatch')

@@ -8,7 +8,6 @@ import time
 import geohash2
 
 from ProjectConf.AuthenticationDecorators import validateCookie
-from ProjectConf.FirestoreConf import db
 
 app_geo_hash = Blueprint('appGeoHash', __name__)
 logger = logging.getLogger()
@@ -30,10 +29,10 @@ def get_geohash_for_location(decoded_claims=None):
         longitude = request.json['longitude']
         precision = int(request.json['precision'])
         geohash = geohash2.encode(latitude=latitude, longitude=longitude, precision=precision)
-        logger.info("%s Successfully got geo hash for location /getgeohash" % (userId))
+        current_app.logger.info("%s Successfully got geo hash for location /getgeohash" % (userId))
         return jsonify({'geohash': geohash})
     except Exception as e:
-        logger.exception("%s Failed to get geo locataion for user in /getgeohash" % (userId))
-        logger.exception(e)
+        current_app.logger.exception("%s Failed to get geo locataion for user in /getgeohash" % (userId))
+        current_app.logger.exception(e)
     return flask.abort(401, 'An error occured in API /getgeohash')
 

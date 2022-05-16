@@ -1,4 +1,5 @@
 from flask import Flask
+import flask
 import logging.config
 import os
 from datetime import datetime
@@ -13,46 +14,58 @@ with app.app_context():
     from FlaskHelpers.AppSwipeView import app_swipe_view_app
     from FlaskHelpers.AppUnswipe import app_unswipe
 
-# # Log Settings
-LOG_FILENAME = datetime.now().strftime("%H_%M_%d_%m_%Y") + ".log"
-if not os.path.exists('Logs/AppLogs/'):
-    os.makedirs('Logs/AppLogs/')
-log_level = "DEBUG"
 
-
-class LoggerConfig:
-    dictConfig = {
-        'version': 1,
-        'formatters': {'default': {
-            'format': '[%(asctime)s] {%(pathname)s:%(funcName)s:%(lineno)d} %(levelname)s - %(message)s',
-        }},
-        'handlers': {'default': {
-            'level': 'DEBUG',
-            'formatter': 'default',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': f'Logs/AppLogs/{LOG_FILENAME}',
-            'maxBytes': 5000000,
-            'backupCount': 10
-        }},
-        'root': {
-            'level': log_level,
-            'handlers': ['default']
+LOGGING_CONFIG = { 
+    'version': 1,
+    'disable_existing_loggers': True,
+    'formatters': { 
+        'standard': { 
+            'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
         },
-    }
+    },
+    'handlers': { 
+        'default': { 
+            'level': 'INFO',
+            'formatter': 'standard',
+            'class': 'logging.StreamHandler',
+            'stream': 'ext://sys.stdout',  # Default is stderr
+        },
+    },
+    'loggers': { 
+        '': {  # root logger
+            'handlers': ['default'],
+            'level': 'WARNING',
+            'propagate': False
+        },
+        'my.packg': { 
+            'handlers': ['default'],
+            'level': 'INFO',
+            'propagate': False
+        },
+        '__main__': {  # if __name__ == '__main__'
+            'handlers': ['default'],
+            'level': 'DEBUG',
+            'propagate': False
+        },
+    } 
+}
+
+logging.config.dictConfig(LOGGING_CONFIG)
 
 
-logging.config.dictConfig(LoggerConfig.dictConfig)
-logger = logging.getLogger()
+app.logger.info('Config')
 
 import json
-
-app.route("/test", method=["Get"])
-
-
+@app.route("/test", methods=["Get"])
 def test():
-    return json.dumps({"status": True})
-
+    try:
+        app.logger.info("Test Called")
+        return json.dumps({"status":True})
+    except Exception as e:
+        app.logger.exception("Failed to get test started")
+        app.logger.exception(e)
+    return flask.abort(401, 'An error occured in API /getgeohash')
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=5000, debug=True)
-    logger.info("Starting Caching Service")
+    app.run(host="0.0.0.0", debug=True)
+    app.logger.info("Starting Amore Flask")
