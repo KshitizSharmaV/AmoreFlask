@@ -1,6 +1,8 @@
 from flask import Flask
 import flask
+import requests
 import logging.config
+from ProjectConf.ReadFlaskYaml import *
 import os
 from datetime import datetime
 
@@ -60,7 +62,12 @@ import json
 def test():
     try:
         app.logger.info("Test Called")
-        return json.dumps({"status":True})
+        response = requests.get(f"{cachingServerRoute}/test",
+                                 headers=headers)
+        if response.status_code == 200:
+            return response.text
+        else:
+            return json.dumps({"status": False})
     except Exception as e:
         app.logger.exception("Failed to get test started")
         app.logger.exception(e)

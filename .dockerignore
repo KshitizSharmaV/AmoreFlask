@@ -1,0 +1,9 @@
+.env
+.git
+.cache
+env/
+env/*
+Logs/
+Logs/*
+.ipynb
+

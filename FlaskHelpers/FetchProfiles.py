@@ -9,7 +9,7 @@ import json
 from ProjectConf.ReadFlaskYaml import cachingServerRoute, headers
 from google.cloud import firestore
 from ProjectConf.LoggerConf import logger
-from ProximityHash.proximityhash import *
+from proximityhash import *
 from ProjectConf.FirestoreConf import async_db, db
 
 '''
