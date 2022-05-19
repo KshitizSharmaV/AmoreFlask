@@ -16,46 +16,13 @@ with app.app_context():
     from FlaskHelpers.AppSwipeView import app_swipe_view_app
     from FlaskHelpers.AppUnswipe import app_unswipe
 
+@app.before_first_request
+def setup_logging():
+    if not app.debug:
+        # In production mode, add log handler to sys.stderr.
+        app.logger.addHandler(logging.StreamHandler())
+        app.logger.setLevel(logging.INFO)
 
-LOGGING_CONFIG = { 
-    'version': 1,
-    'disable_existing_loggers': True,
-    'formatters': { 
-        'standard': { 
-            'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
-        },
-    },
-    'handlers': { 
-        'default': { 
-            'level': 'INFO',
-            'formatter': 'standard',
-            'class': 'logging.StreamHandler',
-            'stream': 'ext://sys.stdout',  # Default is stderr
-        },
-    },
-    'loggers': { 
-        '': {  # root logger
-            'handlers': ['default'],
-            'level': 'WARNING',
-            'propagate': False
-        },
-        'my.packg': { 
-            'handlers': ['default'],
-            'level': 'INFO',
-            'propagate': False
-        },
-        '__main__': {  # if __name__ == '__main__'
-            'handlers': ['default'],
-            'level': 'DEBUG',
-            'propagate': False
-        },
-    } 
-}
-
-logging.config.dictConfig(LOGGING_CONFIG)
-
-
-app.logger.info('Config')
 
 import json
 @app.route("/test", methods=["Get"])
