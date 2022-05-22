@@ -5,7 +5,6 @@ from ProjectConf.AsyncioPlugin import run_coroutine
 from ProjectConf.AuthenticationDecorators import validateCookie
 from ProjectConf.ReadFlaskYaml import cachingServerRoute, headers
 from FlaskHelpers.FetchProfiles import get_profiles
-from FlaskHelpers.FirestoreFunctions import swipe_tasks_future as store_like_dislike_task
 import requests
 import json
 import logging

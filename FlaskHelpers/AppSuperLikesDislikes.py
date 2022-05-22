@@ -7,7 +7,6 @@ import traceback
 import logging
 from ProjectConf import loop
 from ProjectConf.AuthenticationDecorators import validateCookie
-from FlaskHelpers.FirestoreFunctions import swipe_tasks_future as like_dislike_superlike_task
 from FlaskHelpers.FetchProfiles import get_profiles_for_list_of_ids, likes_given, super_likes_given, dislikes_given, \
     likes_received, dislikes_received, super_likes_received, elite_picks
 from ProjectConf.AsyncioPlugin import *
