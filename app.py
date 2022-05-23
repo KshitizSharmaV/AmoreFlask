@@ -15,6 +15,7 @@ with app.app_context():
     from FlaskHelpers.AppSuperLikesDislikes import app_super_likes_dislikes
     from FlaskHelpers.AppSwipeView import app_swipe_view_app
     from FlaskHelpers.AppUnswipe import app_unswipe
+    from FlaskHelpers.AppProfiles import post_profile_to_backend
 
 @app.before_first_request
 def setup_logging():
@@ -42,4 +43,5 @@ def test():
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True)
+    #app.run(host="127.0.0.1", port=5040, debug=True)
     app.logger.info("Starting Amore Flask")
