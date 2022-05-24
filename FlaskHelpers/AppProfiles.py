@@ -44,3 +44,26 @@ def post_profile_to_backend(decoded_claims=None):
         response.status_code = 400
         return response
         
+# Function expects a complete profile of the
+@current_app.route('/fetchGeoRecommendations', methods=['POST'])
+@validateCookie
+def fetch_recommendation_for_user(decoded_claims=None):
+    try:
+        userId = decoded_claims['user_id']
+        current_app.logger.info(userId)
+        requestData = {
+            "userId": userId
+        }
+        response = requests.post(f"{cachingServerRoute}/fetchGeoRecommendationsGate",
+                                 data=json.dumps(requestData),
+                                 headers=headers)
+        current_app.logger.info(f"{userId}: Successfully fetched recommendations for user")
+        response = jsonify({'message':"Success"})
+        response.status_code = 200
+        return response
+    except Exception as e:
+        current_app.logger.error(f"{userId}: Unable to to fetch recommendations for user")
+        current_app.logger.exception(e)
+        response = jsonify({'message': 'An error occured'})
+        response.status_code = 400
+        return response
