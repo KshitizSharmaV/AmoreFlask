@@ -134,6 +134,8 @@ async def get_profile_for_id(profile_id=None):
     profile_ref = async_db.collection('Profiles')
     doc = await profile_ref.document(profile_id).get()
     doc_temp = doc.to_dict()
+    if not doc_temp:
+        return
     doc_temp["id"] = doc.id  # un-comment for production
     return doc_temp
 
@@ -141,11 +143,15 @@ async def get_profile_for_id(profile_id=None):
 # Get list of proile ids from a certain collection
 def get_profiles_from_subcollection(collectionName=None, userId=None, collectionNameChild=None, matchFor=None):
     try:
-        docs = db.collection(collectionName).document(userId).collection(collectionNameChild).where(u'swipe', u'==',
-                                                                                                    matchFor).order_by(
-            u'timestamp', direction=firestore.Query.DESCENDING).stream()
-        user_ids = [doc.id for doc in docs]
-        return user_ids
+        request_body = {
+            "currentUserId": userId,
+            "collectionNameChild": collectionNameChild,
+            "matchFor": matchFor
+        }
+        user_ids = requests.get(f"{cachingServerRoute}/getlikesdislikesforuser",
+                                            data=json.dumps(request_body),
+                                            headers=headers)
+        return user_ids.json()
     except Exception as e:
         print(traceback.format_exc())
 
