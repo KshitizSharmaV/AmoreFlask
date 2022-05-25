@@ -7,8 +7,7 @@ import traceback
 import logging
 from ProjectConf import loop
 from ProjectConf.AuthenticationDecorators import validateCookie
-from FlaskHelpers.FetchProfiles import get_profiles_for_list_of_ids, likes_given, super_likes_given, dislikes_given, \
-    likes_received, dislikes_received, super_likes_received, elite_picks
+from FlaskHelpers.FetchProfiles import *
 from ProjectConf.AsyncioPlugin import *
 from FlaskHelpers.FetchProfiles import get_profiles_within_radius
 from ProjectConf.ReadFlaskYaml import cachingServerRoute, headers
@@ -41,12 +40,13 @@ def fetch_profile_common_route(decoded_claims=None):
     try:
         user_id = decoded_claims['user_id']
         from_collection = request.json['fromCollection']
-        ids_list = paramsReceivedFuncMapping[from_collection](userId=user_id)
-        future = run_coroutine(get_profiles_for_list_of_ids(list_of_ids=ids_list))
-        profiles_array = future.result()
+        # ids_list = paramsReceivedFuncMapping[from_collection](userId=user_id)
+        # future = run_coroutine(get_profiles_for_list_of_ids(list_of_ids=ids_list))
+        # profiles_array = future.result()
+        profiles_array = paramsReceivedFuncMapping[from_collection](userId=user_id)
         current_app.logger.info(
             "%s fetched profiles from %s: %s" % (user_id, from_collection, str(len(profiles_array))))
-        current_app.logger.warning(f"user_id: {user_id}, from_collection: {from_collection}, result_array: {profiles_array}")
+        # current_app.logger.warning(f"user_id: {user_id}, from_collection: {from_collection}, result_array: {profiles_array}")
         return jsonify(profiles_array)
     except Exception as e:
         current_app.logger.exception(

@@ -118,26 +118,33 @@ def elite_picks(userId=None):
         query = profile_ref.order_by("totalScore").limit_to_last(10)
         docs = query.get()
         user_ids = [doc.id for doc in docs]
-        return user_ids
+        request_body = {
+            "profileIdList": user_ids
+        }
+        profiles_array = requests.get(f"{cachingServerRoute}/getprofilesbyids",
+                                            data=json.dumps(request_body),
+                                            headers=headers)
+        profiles_array = profiles_array.json()
+        return profiles_array
     except Exception as e:
         print(traceback.format_exc())
 
 
-# Get Profiles of list of ids
-async def get_profiles_for_list_of_ids(list_of_ids=None):
-    profilesArray = await asyncio.gather(*[get_profile_for_id(profile_id=id) for id in list_of_ids])
-    return profilesArray
+# # Get Profiles of list of ids
+# async def get_profiles_for_list_of_ids(list_of_ids=None):
+#     profilesArray = await asyncio.gather(*[get_profile_for_id(profile_id=id) for id in list_of_ids])
+#     return profilesArray
 
 
-# Get profile for a certain id
-async def get_profile_for_id(profile_id=None):
-    profile_ref = async_db.collection('Profiles')
-    doc = await profile_ref.document(profile_id).get()
-    doc_temp = doc.to_dict()
-    if not doc_temp:
-        return
-    doc_temp["id"] = doc.id  # un-comment for production
-    return doc_temp
+# # Get profile for a certain id
+# async def get_profile_for_id(profile_id=None):
+#     profile_ref = async_db.collection('Profiles')
+#     doc = await profile_ref.document(profile_id).get()
+#     doc_temp = doc.to_dict()
+#     if not doc_temp:
+#         return
+#     doc_temp["id"] = doc.id  # un-comment for production
+#     return doc_temp
 
 
 # Get list of proile ids from a certain collection
@@ -148,10 +155,11 @@ def get_profiles_from_subcollection(collectionName=None, userId=None, collection
             "collectionNameChild": collectionNameChild,
             "matchFor": matchFor
         }
-        user_ids = requests.get(f"{cachingServerRoute}/getlikesdislikesforuser",
+        profiles_array = requests.get(f"{cachingServerRoute}/getlikesdislikesforuser",
                                             data=json.dumps(request_body),
                                             headers=headers)
-        return user_ids.json()
+        # return user_ids.json()
+        return profiles_array.json()
     except Exception as e:
         print(traceback.format_exc())
 
