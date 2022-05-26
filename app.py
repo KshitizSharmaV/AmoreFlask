@@ -30,8 +30,7 @@ import json
 def test():
     try:
         app.logger.info("Test Called")
-        response = requests.get(f"{cachingServerRoute}/test",
-                                 headers=headers)
+        response = requests.get(f"{cachingServerRoute}/test",headers=headers)
         if response.status_code == 200:
             return response.text
         else:

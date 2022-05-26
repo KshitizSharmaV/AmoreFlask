@@ -28,7 +28,7 @@ def post_profile_to_backend(decoded_claims=None):
         userId = decoded_claims['user_id']
         current_app.logger.info(userId)
         requestData = {
-            "profile": request.json['profile'],
+            "profile": request.json['profile']
         }
         response = requests.post(f"{cachingServerRoute}/storeProfileInBackendGate",
                                  data=json.dumps(requestData),
@@ -52,17 +52,16 @@ def fetch_recommendation_for_user(decoded_claims=None):
         userId = decoded_claims['user_id']
         current_app.logger.info(userId)
         requestData = {
-            "userId": userId
+            "userId": userId            
         }
-        profilesList = requests.post(f"{cachingServerRoute}/fetchGeoRecommendationsGate",
+        response = requests.post(f"{cachingServerRoute}/fetchGeoRecommendationsGate",
                                  data=json.dumps(requestData),
                                  headers=headers)
-        profilesList = profilesList.json()
-        current_app.logger.warning(f"{userId}: Recommendations: {profilesList}")
-        # current_app.logger.info(f"{userId}: Successfully fetched recommendations for user")
+        current_app.logger.info(f"{userId}: Successfully fetched recommendations for user")
+        current_app.logger.info(f"{response.json()}")
         response = jsonify({'message':"Success"})
         response.status_code = 200
-        return jsonify(profilesList)
+        return response
     except Exception as e:
         current_app.logger.error(f"{userId}: Unable to to fetch recommendations for user")
         current_app.logger.exception(e)
