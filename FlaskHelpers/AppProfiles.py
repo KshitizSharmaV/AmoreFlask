@@ -52,7 +52,9 @@ def fetch_recommendation_for_user(decoded_claims=None):
         userId = decoded_claims['user_id']
         current_app.logger.info(userId)
         requestData = {
-            "userId": userId            
+            "userId": userId,
+            "profilesCountLeftInDeck": request.json['profilesCountLeftInDeck'],
+            "filterData": request.json['filterData']
         }
         response = requests.post(f"{cachingServerRoute}/fetchGeoRecommendationsGate",
                                  data=json.dumps(requestData),
