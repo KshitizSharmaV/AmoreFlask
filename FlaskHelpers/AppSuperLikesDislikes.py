@@ -38,8 +38,10 @@ def fetch_profile_common_route(decoded_claims=None):
     user_id = ""
     from_collection = ""
     try:
+        current_app.logger.info(f"/commonfetchprofiles API TRIGGERED.")
         user_id = decoded_claims['user_id']
         from_collection = request.json['fromCollection']
+        current_app.logger.info(f"/commonfetchprofiles API TRIGGERED for {from_collection}")
         # ids_list = paramsReceivedFuncMapping[from_collection](userId=user_id)
         # future = run_coroutine(get_profiles_for_list_of_ids(list_of_ids=ids_list))
         # profiles_array = future.result()

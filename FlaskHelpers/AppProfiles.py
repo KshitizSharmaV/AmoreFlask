@@ -49,19 +49,26 @@ def post_profile_to_backend(decoded_claims=None):
 @validateCookie
 def fetch_recommendation_for_user(decoded_claims=None):
     try:
+        current_app.logger.info(f"/fetchGeoRecommendations API TRIGGERED.")
         userId = decoded_claims['user_id']
         current_app.logger.info(userId)
         requestData = {
-            "userId": userId            
+            "userId": userId,
+            "profilesCountLeftInDeck": request.get_json().get('profilesCountLeftInDeck')
         }
         response = requests.post(f"{cachingServerRoute}/fetchGeoRecommendationsGate",
                                  data=json.dumps(requestData),
                                  headers=headers)
+        response = response.json()
+        for profile in response:
+            if type(profile['location']['latitude']) != float or type(profile['location']['longitude']) != float:
+                profile['location']['latitude'] = float(profile['location']['latitude'])
+                profile['location']['longitude'] = float(profile['location']['longitude'])
         current_app.logger.info(f"{userId}: Successfully fetched recommendations for user")
-        current_app.logger.info(f"{response.json()}")
-        response = jsonify({'message':"Success"})
-        response.status_code = 200
-        return response
+        # current_app.logger.info(f"{response}")
+        # response = jsonify({'message':"Success"})
+        # response.status_code = 200
+        return jsonify(response)
     except Exception as e:
         current_app.logger.error(f"{userId}: Unable to to fetch recommendations for user")
         current_app.logger.exception(e)
