@@ -166,7 +166,10 @@ def get_profiles_from_subcollection(collectionName=None, userId=None, collection
 
 async def get_profiles_within_geohash(geohash):
     colref = async_db.collection('FilterAndLocation')
-    if len(geohash) == 2:
+    if len(geohash) == 1:
+        docs = colref.where("geohash1", "==", geohash)
+        print("geo triggered...")
+    elif len(geohash) == 2:
         docs = colref.where("geohash2", "==", geohash)
         print("geo2 triggered...")
     elif len(geohash) == 3:
