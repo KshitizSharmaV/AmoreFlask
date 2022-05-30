@@ -158,7 +158,6 @@ def get_profiles_from_subcollection(collectionName=None, userId=None, collection
         profiles_array = requests.get(f"{cachingServerRoute}/getlikesdislikesforuser",
                                             data=json.dumps(request_body),
                                             headers=headers)
-        # return user_ids.json()
         return profiles_array.json()
     except Exception as e:
         print(traceback.format_exc())

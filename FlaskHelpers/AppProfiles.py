@@ -60,16 +60,19 @@ def fetch_recommendation_for_user(decoded_claims=None):
         response = requests.post(f"{cachingServerRoute}/fetchGeoRecommendationsGate",
                                  data=json.dumps(requestData),
                                  headers=headers)
-        response = response.json()
-        for profile in response:
-            if type(profile['location']['latitude']) != float or type(profile['location']['longitude']) != float:
-                profile['location']['latitude'] = float(profile['location']['latitude'])
-                profile['location']['longitude'] = float(profile['location']['longitude'])
-        current_app.logger.info(f"{userId}: Successfully fetched recommendations for user")
-        # current_app.logger.info(f"{response}")
-        # response = jsonify({'message':"Success"})
-        # response.status_code = 200
-        return jsonify(response)
+        if response.status_code == 200:
+            response = response.json()
+            for profile in response:
+                if type(profile['location']['latitude']) != float or type(profile['location']['longitude']) != float:
+                    profile['location']['latitude'] = float(profile['location']['latitude'])
+                    profile['location']['longitude'] = float(profile['location']['longitude'])
+            current_app.logger.info(f"{userId}: Successfully fetched recommendations for user")
+            # current_app.logger.info(f"{response}")
+            # response = jsonify({'message':"Success"})
+            # response.status_code = 200
+            return jsonify(response)
+        else:
+            current_app.logger.error(f"{userId}: Unable to to fetch recommendations for user")    
     except Exception as e:
         current_app.logger.error(f"{userId}: Unable to to fetch recommendations for user")
         current_app.logger.exception(e)
