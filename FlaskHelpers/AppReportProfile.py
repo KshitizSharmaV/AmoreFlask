@@ -1,16 +1,10 @@
-
-
 import flask
 from flask import Blueprint, current_app, jsonify, request
 import json
 import logging
-import time
-
-
-from ProjectConf.AsyncioPlugin import run_coroutine
+import requests
 from ProjectConf.AuthenticationDecorators import validateCookie
-from ProjectConf.FirestoreConf import db
-from FlaskHelpers.UnmatchHelper.UnmatchHelper import unmatch_task_function
+from ProjectConf.ReadFlaskYaml import cachingServerRoute, headers
 
 app_report_profile = Blueprint('appReportProfile', __name__)
 logger = logging.getLogger()
@@ -21,28 +15,28 @@ logger = logging.getLogger()
 @validateCookie
 def report_profiles(decoded_claims=None):
     """
-    Endpoint to store likes, superlikes, dislikes, liked_by, disliked_by, superliked_by for users
+    Endpoint to Report a profile, either from Conversation View or Swipe View
         Body of Request contains following payloads:
-        - current user id
-        - reported profile id
+        - Current User ID
+        - Reported Profile ID
+        - Reason for reporting
+        - Description
+    :return: Response contains success/failure status of reporting task.
     """
     try:
         userId = decoded_claims['user_id']
-        current_user_id = request.json['current_user_id']
-        reported_profile_id = request.json['other_user_id']
-        reason_given = request.json['reasonGiven']
-        description_given = request.json['descriptionGiven']
-        db.collection('ReportedProfile').document(reported_profile_id).collection(userId).document(
-            "ReportingDetails").set({"reportedById": userId,
-                                     "idBeingReported": reported_profile_id,
-                                     "reasonGiven": reason_given,
-                                     "descriptionGiven": description_given,
-                                     "timestamp": time.time()
-                                     })
-        future = run_coroutine(unmatch_task_function(current_user_id, reported_profile_id))
-        results = future.result()
+        request_data = {
+            "current_user_id": request.get_json().get("current_user_id"), 
+            "other_user_id": request.get_json().get("other_user_id"), 
+            "reasonGiven": request.get_json().get("reasonGiven"), 
+            "descriptionGiven": request.get_json().get("descriptionGiven")
+        }
+        response = requests.post(f"{cachingServerRoute}/reportprofilegate",
+                                 data=json.dumps(request_data),
+                                 headers=headers)
+        response = response.json()
         current_app.logger.info("%s Successfully reported profile /reportProfile" % (userId))
-        return jsonify({'status': 200})
+        return jsonify(response)
     except Exception as e:
         current_app.logger.error("%s Failed to report profile on /reportProfile" % (userId))
         current_app.logger.exception(e)

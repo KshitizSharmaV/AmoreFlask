@@ -46,6 +46,8 @@ def fetch_profile_common_route(decoded_claims=None):
         # profiles_array = future.result()
         profiles_array = paramsReceivedFuncMapping[from_collection](userId=user_id)
         for profile in profiles_array:
+            if not profile.get('location') and profile.get('location').get('latitude') and profile.get('location').get('latitude'):
+                continue
             if type(profile['location']['latitude']) != float or type(profile['location']['longitude']) != float:
                 profile['location']['latitude'] = float(profile['location']['latitude'])
                 profile['location']['longitude'] = float(profile['location']['longitude'])
