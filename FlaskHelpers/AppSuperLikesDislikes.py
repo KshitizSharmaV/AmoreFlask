@@ -7,9 +7,8 @@ import traceback
 import logging
 from ProjectConf import loop
 from ProjectConf.AuthenticationDecorators import validateCookie
-from FlaskHelpers.FetchProfiles import *
 from ProjectConf.AsyncioPlugin import *
-from FlaskHelpers.FetchProfiles import get_profiles_within_radius
+from FlaskHelpers.ExtSuperLikesDislikes import likes_given, super_likes_given, dislikes_given, likes_received, dislikes_received, super_likes_received, elite_picks
 from ProjectConf.ReadFlaskYaml import cachingServerRoute, headers
 
 app_super_likes_dislikes = Blueprint('AppSuperLikesDislikes', __name__)
@@ -20,12 +19,6 @@ paramsReceivedFuncMapping = {"likesGiven": likes_given,
                              "dislikesLikesReceived": dislikes_received,
                              "superLikesReceived": super_likes_received,
                              "elitePicks": elite_picks}
-logger = logging.getLogger()
-
-"""
-APIs yet to be ported to Amore Caching Server
-"""
-
 
 # Common route to be called from Elite, Likes Given and Likes Received Views
 @current_app.route('/commonfetchprofiles', methods=['POST', 'GET'])
@@ -40,10 +33,6 @@ def fetch_profile_common_route(decoded_claims=None):
     try:
         user_id = decoded_claims['user_id']
         from_collection = request.json['fromCollection']
-        # current_app.logger.info(f"/commonfetchprofiles API TRIGGERED for {from_collection}")
-        # ids_list = paramsReceivedFuncMapping[from_collection](userId=user_id)
-        # future = run_coroutine(get_profiles_for_list_of_ids(list_of_ids=ids_list))
-        # profiles_array = future.result()
         profiles_array = paramsReceivedFuncMapping[from_collection](userId=user_id)
         for profile in profiles_array:
             if not profile.get('location') and profile.get('location').get('latitude') and profile.get('location').get('latitude'):
@@ -58,42 +47,6 @@ def fetch_profile_common_route(decoded_claims=None):
             "%s failed to fetch profiles in /commonfetchprofiles from %s" % (user_id, from_collection))
         current_app.logger.exception(traceback.format_exc())
     return flask.abort(401, '%s failed to fetch profiles in /commonfetchprofiles from %s' % (user_id, from_collection))
-
-
-# fetch_profiles within given radius for cards in swipe view
-@current_app.route('/fetchprofileswithinradius', methods=['POST'])
-@validateCookie
-def fetch_profiles_within_given_radius(decoded_claims=None):
-    """
-    :accepts:
-    - n =  no. of profiles
-    - radius = radius of search
-    - Current location of user -- Latitude, Longitude
-    - id token
-    :process:
-    - verify id token
-    - get all users uid (Will be refined for querying within a particular radius)
-    - filter and sort based on Recommendation Engine
-    - eliminate user uids present in current user's Likes and Dislikes
-    - pick n top uids from rest of the uids
-    :return:
-    - array of n uids
-    """
-    try:
-        userId = decoded_claims['user_id']
-        idsAlreadyInDeck = request.json["idsAlreadyInDeck"]
-        latitude = request.json['latitude']
-        longitude = request.json['longitude']
-        radius = int(request.json['radius'])
-        profilesArray = get_profiles_within_radius(userId=userId, ids_already_in_deck=idsAlreadyInDeck,
-                                                   latitude=latitude, longitude=longitude, radius=radius)
-        current_app.logger.info("%s Successfully fetched profiles within radius /fetchprofileswithinradius" % (userId))
-        return jsonify(profilesArray)
-    except Exception as e:
-        current_app.logger.exception(
-            "%s Failed to get profiles within given radius locataion for user in /fetchprofileswithinradius" % (userId))
-        current_app.logger.exception(e)
-    return flask.abort(401, 'An error occured in API /fetchprofileswithinradius')
 
 
 """
@@ -135,3 +88,4 @@ def upgrade_like_to_superlike(decoded_claims=None):
             "%s Failed to get store likes, dislikes or supelikes in post request to in /storelikesdislikes" % (userId))
         current_app.logger.exception(e)
     return flask.abort(401, 'An error occured in API /storelikesdislikes')
+

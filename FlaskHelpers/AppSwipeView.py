@@ -4,48 +4,11 @@ import traceback
 from ProjectConf.AsyncioPlugin import run_coroutine
 from ProjectConf.AuthenticationDecorators import validateCookie
 from ProjectConf.ReadFlaskYaml import cachingServerRoute, headers
-from FlaskHelpers.FetchProfiles import get_profiles
 import requests
 import json
 import logging
 
 app_swipe_view_app = Blueprint('AppSwipeView', __name__)
-logger = logging.getLogger()
-
-"""
-All APIs ported to Amore Caching Server
-"""
-
-
-# fetch_profiles is used to get profiles for cards in swipe view
-@current_app.route('/fetchprofiles', methods=['POST'])
-@validateCookie
-def fetch_profiles(decoded_claims=None):
-    """
-    :accepts:
-    - n =  no. of profiles
-    - radius = radius of search
-    - current location of user
-    - id token
-    :process:
-    - verify id token
-    - get all users uid (Will be refined for querying within a particular radius)
-    - filter and sort based on Recommendation Engine
-    - eliminate user uids present in current user's Likes and Dislikes
-    - pick n top uids from rest of the uids
-    :return:
-    - array of n uids
-    """
-    try:
-        user_id = decoded_claims['user_id']
-        profiles_array = get_profiles(user_id=user_id, ids_already_in_deck=request.json["idsAlreadyInDeck"])
-        current_app.logger.info("%s Successfully fetched profile /fetchprofiles" % (user_id))
-        return jsonify(profiles_array)
-    except Exception as e:
-        current_app.logger.exception("%s Failed to fetch profile in /fetchprofiles " % (user_id))
-        current_app.logger.exception(traceback.format_exc())
-    flask.abort(401, 'An error occured in /fetchprofiles')
-
 
 # store_likes_dislikes_superlikes store likes, dislikes and superlikes in own user id and other profile being acted on
 @current_app.route('/storelikesdislikes', methods=['POST'])
