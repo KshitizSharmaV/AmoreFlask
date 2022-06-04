@@ -29,7 +29,7 @@ def get_geohash_for_location(decoded_claims=None):
         longitude = request.json['longitude']
         precision = int(request.json['precision'])
         geohash = geohash2.encode(latitude=latitude, longitude=longitude, precision=precision)
-        current_app.logger.info("%s Successfully got geo hash for location /getgeohash" % (userId))
+        current_app.logger.info("%s Successfully got geo hash {geohash} for location /getgeohash" % (userId))
         return jsonify({'geohash': geohash})
     except Exception as e:
         current_app.logger.exception("%s Failed to get geo locataion for user in /getgeohash" % (userId))
