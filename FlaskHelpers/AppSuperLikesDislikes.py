@@ -88,4 +88,3 @@ def upgrade_like_to_superlike(decoded_claims=None):
             "%s Failed to get store likes, dislikes or supelikes in post request to in /storelikesdislikes" % (userId))
         current_app.logger.exception(e)
     return flask.abort(401, 'An error occured in API /storelikesdislikes')
-

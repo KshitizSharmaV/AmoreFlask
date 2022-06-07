@@ -10,7 +10,7 @@ from ProjectConf.AuthenticationDecorators import validateCookie
 from ProjectConf.ReadFlaskYaml import cachingServerRoute, headers
 
 
-app_report_profile = Blueprint('appProfiles', __name__)
+app_profile = Blueprint('AppProfiles', __name__)
 logger = logging.getLogger()
 
 
