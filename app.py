@@ -14,8 +14,6 @@ with app.app_context():
     from FlaskHelpers.AppReportProfile import app_report_profile
     from FlaskHelpers.AppSuperLikesDislikes import app_super_likes_dislikes
     from FlaskHelpers.AppSwipeView import app_swipe_view_app
-    from FlaskHelpers.AppUnswipe import app_unswipe
-    from FlaskHelpers.AppProfiles import post_profile_to_backend
     from FlaskHelpers.AppDirectMessage import app_direct_message
     from FlaskHelpers.AppMatchUnmatch import app_match_unmatch
     from FlaskHelpers.AppProfiles import app_profile
