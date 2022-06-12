@@ -10,44 +10,44 @@ from ProjectConf.FirestoreConf import async_db, db
 
 # Profile Id liked by user
 def likes_given(userId=None):
-    return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId, collectionNameChild=u'Given',
+    return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId, childCollectionName=u'Given',
                                            matchFor="Likes")
 
 
 # Profile Id super liked by user
 def super_likes_given(userId=None):
-    return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId, collectionNameChild=u'Given',
+    return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId, childCollectionName=u'Given',
                                            matchFor="Superlikes")
 
 
 # Profile Id dis-liked by user
 def dislikes_given(userId=None):
-    return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId, collectionNameChild=u'Given',
+    return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId, childCollectionName=u'Given',
                                            matchFor="Dislikes")
 
 
 def likes_received(userId=None):
     return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId,
-                                           collectionNameChild=u'Received', matchFor="Likes")
+                                           childCollectionName=u'Received', matchFor="Likes")
 
 
 # Profile Id dis-liked by user
 def dislikes_received(userId=None):
     return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId,
-                                           collectionNameChild=u'Received', matchFor="Dislikes")
+                                           childCollectionName=u'Received', matchFor="Dislikes")
 
 
 # Profile Id super liked by user
 def super_likes_received(userId=None):
     return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId,
-                                           collectionNameChild=u'Received', matchFor="Superlikes")
+                                           childCollectionName=u'Received', matchFor="Superlikes")
 
 # Get list of proile ids from a certain collection
-def get_profiles_from_subcollection(collectionName=None, userId=None, collectionNameChild=None, matchFor=None):
+def get_profiles_from_subcollection(collectionName=None, userId=None, childCollectionName=None, matchFor=None):
     try:
         request_body = {
             "currentUserId": userId,
-            "collectionNameChild": collectionNameChild,
+            "childCollectionName": childCollectionName,
             "matchFor": matchFor
         }
         profiles_array = requests.get(f"{cachingServerRoute}/getlikesdislikesforuser",
