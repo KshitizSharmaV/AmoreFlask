@@ -75,7 +75,8 @@ def upgrade_like_to_superlike(decoded_claims=None):
         requestData = {
             "currentUserId": request.json['currentUserID'],
             "swipeInfo": request.json['swipeInfo'],
-            "swipedUserId": request.json['swipedUserID']
+            "swipedUserId": request.json['swipedUserID'],
+            "upgradeLikeToSuperlike": True
         }
         response = requests.post(f"{cachingServerRoute}/storelikesdislikesGate",
                                  data=json.dumps(requestData),
