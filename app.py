@@ -1,4 +1,5 @@
-from flask import Flask
+from flask import Flask, g
+import time
 import flask
 import requests
 import logging.config
@@ -25,6 +26,15 @@ def setup_logging():
         app.logger.addHandler(logging.StreamHandler())
         app.logger.setLevel(logging.INFO)
 
+@app.before_request
+def before_request():
+    g.start = time.time()
+
+@app.after_request
+def after_request(response):
+    diff = time.time() - g.start
+    app.logger.debug(f"Total server side exec time: {diff}")
+    return response
 
 import json
 @app.route("/test", methods=["Get"])

@@ -59,15 +59,13 @@ def rewind_likes_dislikes_superlikes(decoded_claims=None):
         """
         userId = decoded_claims['user_id']
         request_data = {
-            'currentUserID': request.json['currentUserID'],
-            'swipeInfo': request.json['swipeInfo'],
-            'swipedUserID': request.json['swipedUserID']
+            'currentUserID': request.get_json().get('currentUserID')
         }
-        response = requests.post(f"{cachingServerRoute}/rewindsingleswipegate",
+        rewinded_user_info = requests.post(f"{cachingServerRoute}/rewindsingleswipegate",
                                  data=json.dumps(request_data),
                                  headers=headers)
-        current_app.logger.info(f" Successfully rewinded {request.json['swipeInfo']} by {userId}")
-        return jsonify({'status': 200})
+        current_app.logger.info(f" Successfully rewinded last swipe by {request_data['currentUserID']}")
+        return jsonify(rewinded_user_info.json())
     except Exception as e:
         current_app.logger.exception(
             "%s Failed to rewind" % (userId))
