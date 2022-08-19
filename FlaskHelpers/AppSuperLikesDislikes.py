@@ -33,7 +33,8 @@ def fetch_profile_common_route(decoded_claims=None):
     try:
         user_id = decoded_claims['user_id']
         from_collection = request.json['fromCollection']
-        profiles_array = paramsReceivedFuncMapping[from_collection](userId=user_id)
+        noOfLastRecords = request.get_json().get('noOfLastRecords')
+        profiles_array = paramsReceivedFuncMapping[from_collection](userId=user_id, noOfLastRecords=noOfLastRecords)
         for profile in profiles_array:
             if not profile.get('location') and profile.get('location').get('latitude') and profile.get('location').get('latitude'):
                 continue

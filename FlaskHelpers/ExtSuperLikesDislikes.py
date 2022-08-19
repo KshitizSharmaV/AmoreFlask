@@ -9,46 +9,47 @@ from ProjectConf.FirestoreConf import async_db, db
 
 
 # Profile Id liked by user
-def likes_given(userId=None):
+def likes_given(userId=None, noOfLastRecords=None):
     return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId, childCollectionName=u'Given',
-                                           matchFor="Likes")
+                                           matchFor="Likes", noOfLastRecords=noOfLastRecords)
 
 
 # Profile Id super liked by user
-def super_likes_given(userId=None):
+def super_likes_given(userId=None, noOfLastRecords=None):
     return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId, childCollectionName=u'Given',
-                                           matchFor="Superlikes")
+                                           matchFor="Superlikes", noOfLastRecords=noOfLastRecords)
 
 
 # Profile Id dis-liked by user
-def dislikes_given(userId=None):
+def dislikes_given(userId=None, noOfLastRecords=None):
     return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId, childCollectionName=u'Given',
-                                           matchFor="Dislikes")
+                                           matchFor="Dislikes", noOfLastRecords=noOfLastRecords)
 
 
-def likes_received(userId=None):
+def likes_received(userId=None, noOfLastRecords=None):
     return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId,
-                                           childCollectionName=u'Received', matchFor="Likes")
+                                           childCollectionName=u'Received', matchFor="Likes", noOfLastRecords=noOfLastRecords)
 
 
 # Profile Id dis-liked by user
-def dislikes_received(userId=None):
+def dislikes_received(userId=None, noOfLastRecords=None):
     return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId,
-                                           childCollectionName=u'Received', matchFor="Dislikes")
+                                           childCollectionName=u'Received', matchFor="Dislikes", noOfLastRecords=noOfLastRecords)
 
 
 # Profile Id super liked by user
-def super_likes_received(userId=None):
+def super_likes_received(userId=None, noOfLastRecords=None):
     return get_profiles_from_subcollection(collectionName=u'LikesDislikes', userId=userId,
-                                           childCollectionName=u'Received', matchFor="Superlikes")
+                                           childCollectionName=u'Received', matchFor="Superlikes", noOfLastRecords=noOfLastRecords)
 
 # Get list of proile ids from a certain collection
-def get_profiles_from_subcollection(collectionName=None, userId=None, childCollectionName=None, matchFor=None):
+def get_profiles_from_subcollection(collectionName=None, userId=None, childCollectionName=None, matchFor=None, noOfLastRecords=None):
     try:
         request_body = {
             "currentUserId": userId,
             "childCollectionName": childCollectionName,
-            "matchFor": matchFor
+            "matchFor": matchFor,
+            "noOfLastRecords": noOfLastRecords
         }
         profiles_array = requests.get(f"{cachingServerRoute}/getlikesdislikesforuser",
                                             data=json.dumps(request_body),
@@ -59,10 +60,10 @@ def get_profiles_from_subcollection(collectionName=None, userId=None, childColle
 
 
 
-def elite_picks(userId=None):
+def elite_picks(userId=None, noOfLastRecords=None):
     try:
         profile_ref = db.collection('ProfilesGrading')
-        query = profile_ref.order_by("totalScore").limit_to_last(10)
+        query = profile_ref.order_by("totalScore").limit_to_last(noOfLastRecords)
         docs = query.get()
         user_ids = [doc.id for doc in docs]
         request_body = {
