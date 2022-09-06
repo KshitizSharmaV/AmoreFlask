@@ -63,9 +63,10 @@ def fetch_recommendation_for_user(decoded_claims=None):
         if response.status_code == 200:
             response = response.json()
             for profile in response:
-                if type(profile['location']['latitude']) != float or type(profile['location']['longitude']) != float:
-                    profile['location']['latitude'] = float(profile['location']['latitude'])
-                    profile['location']['longitude'] = float(profile['location']['longitude'])
+                if profile.get('location') and profile.get('location').get('latitude') and profile.get('location').get('longitude'):
+                    if type(profile['location']['latitude']) != float or type(profile['location']['longitude']) != float:
+                        profile['location']['latitude'] = float(profile['location']['latitude'])
+                        profile['location']['longitude'] = float(profile['location']['longitude'])
             current_app.logger.info(f"{userId}: Successfully fetched recommendations for user")
             # current_app.logger.info(f"{response}")
             # response = jsonify({'message':"Success"})
