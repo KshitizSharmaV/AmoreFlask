@@ -1,10 +1,8 @@
 import yaml
 import os
 
-with open("CachingService.yml", "r") as ymlfile:
-    cfg = yaml.safe_load(ymlfile)
-cachingHost = cfg["amoreCachingService"]["hostname"]
-cachingPort = cfg["amoreCachingService"]["port"]
+cachingHost = '127.0.0.1'
+cachingPort = 5050
 
 in_env = os.getenv('FLASK_SERVICE_SERVICE_HOST', None)
 
