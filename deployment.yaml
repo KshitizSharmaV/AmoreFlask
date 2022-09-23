@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: flaskapi
-          image: flask-api
+          image: us-central1-docker.pkg.dev/amore-f8cd6/amore-microservices/flask-api:latest
           imagePullPolicy: Never
           ports:
             - containerPort: 5040
