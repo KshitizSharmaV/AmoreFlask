@@ -52,3 +52,4 @@ spec:
   selector:
     app: flaskapi
   type: LoadBalancer
+  loadBalancerIP: "34.172.205.119"
