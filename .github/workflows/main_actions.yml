@@ -1,8 +1,8 @@
 name: Build and Push Amore Flask Image to Google Cloud Platform
 on:
   workflow_dispatch:
-  push:
-    branches: [ master ]
+#   push:
+#     branches: [ master ]
 jobs:
   build-push-gcr:
     name: Build and Push to GCP
