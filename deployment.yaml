@@ -36,6 +36,10 @@ spec:
                 secretKeyRef:
                   name: firebase-secret  # name of the Secret
                   key: stagingServiceAccountKey.json
+          readinessProbe:
+            httpGet:
+              path: /test
+              port: 5040
 
 
 
@@ -44,12 +48,23 @@ apiVersion: v1
 kind: Service
 metadata:
   name: flask-service
+  annotations:
+    cloud.google.com/app-protocols: '{"my-https-port":"HTTPS","my-http-port":"HTTP"}'
 spec:
-  ports:
-  - port: 5040
-    protocol: TCP
-    targetPort: 5040
+  # ports:
+  # - port: 5040
+  #   protocol: TCP
+  #   targetPort: 5040
   selector:
     app: flaskapi
-  type: LoadBalancer
-  loadBalancerIP: "34.172.205.119"
+  type: NodePort
+  ports:
+  - name: my-https-port
+    port: 443
+    targetPort: 5040
+  - name: my-http-port
+    port: 80
+    targetPort: 5040
+  - name: my-tcp-port
+    port: 5040
+    targetPort: 5040
