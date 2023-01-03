@@ -3,7 +3,6 @@ import asyncio
 import requests
 import json
 from ProjectConf.ReadFlaskYaml import cachingServerRoute, headers
-from proximityhash import create_geohash
 import time
 from ProjectConf.FirestoreConf import async_db, db
 
