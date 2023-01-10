@@ -23,7 +23,7 @@ spec:
                 - key: cloud.google.com/gke-nodepool
                   operator: In
                   values:
-                  - default-pool
+                  - redis-pool
       containers:
         - name: flaskapi
           image: us-central1-docker.pkg.dev/amore-f8cd6/amore-microservices/flask-api:latest
