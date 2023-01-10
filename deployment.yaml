@@ -36,10 +36,12 @@ spec:
                 secretKeyRef:
                   name: firebase-secret  # name of the Secret
                   key: stagingServiceAccountKey.json
-#           readinessProbe:
-#             httpGet:
-#               path: /test
-#               port: 5040
+          readinessProbe:
+            httpGet:
+              path: /test
+              port: 5040
+            initialDelaySeconds: 10
+            periodSeconds: 10
 
 
 
