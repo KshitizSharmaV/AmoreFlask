@@ -6,7 +6,7 @@ metadata:
   labels:
     app: flaskapi
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: flaskapi
@@ -48,7 +48,7 @@ spec:
               path: /test
               port: 5040
             initialDelaySeconds: 10
-            periodSeconds: 10
+            periodSeconds: 300
 
 
 
