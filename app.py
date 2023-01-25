@@ -6,6 +6,9 @@ import logging.config
 from ProjectConf.ReadFlaskYaml import *
 import os
 from datetime import datetime
+# Imports the Cloud Logging client library
+import google.cloud.logging
+from ProjectConf.FirestoreConf import cred
 
 app = Flask(__name__)
 
@@ -22,9 +25,17 @@ with app.app_context():
 @app.before_first_request
 def setup_logging():
     if not app.debug:
+        # Instantiates a client
+        client = google.cloud.logging.Client(credentials=cred.get_credential())
+
+        # Retrieves a Cloud Logging handler based on the environment
+        # you're running in and integrates the handler with the
+        # Python logging module. By default this captures all logs
+        # at INFO level and higher
+        client.setup_logging()
         # In production mode, add log handler to sys.stderr.
-        app.logger.addHandler(logging.StreamHandler())
-        app.logger.setLevel(logging.INFO)
+        # app.logger.setLevel(logging.INFO)
+        # app.logger.addHandler(logging.StreamHandler(sys.stdout))
 
 @app.before_request
 def before_request():

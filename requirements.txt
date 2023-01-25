@@ -74,3 +74,4 @@ wcwidth==0.2.5
 Werkzeug==2.0.2
 wrapt==1.14.0
 -e git+https://github.com/piyush888/GeoProxHash.git#egg=ProximityHash
+google-cloud-logging
