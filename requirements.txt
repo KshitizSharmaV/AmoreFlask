@@ -30,7 +30,7 @@ gunicorn
 httplib2==0.20.2
 idna==3.3
 ipykernel==6.13.0
-ipython==8.2.0
+ipython==8.10.0
 itsdangerous==2.0.1
 jedi==0.18.1
 Jinja2==3.0.2
