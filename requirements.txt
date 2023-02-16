@@ -71,7 +71,7 @@ traitlets==5.1.1
 uritemplate==4.1.1
 urllib3==1.26.7
 wcwidth==0.2.5
-Werkzeug==2.0.2
+Werkzeug==2.2.3
 wrapt==1.14.0
 -e git+https://github.com/piyush888/GeoProxHash.git#egg=ProximityHash
 google-cloud-logging
