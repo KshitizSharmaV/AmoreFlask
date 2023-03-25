@@ -29,7 +29,8 @@ def report_profiles(decoded_claims=None):
             "current_user_id": request.get_json().get("current_user_id"), 
             "other_user_id": request.get_json().get("other_user_id"), 
             "reasonGiven": request.get_json().get("reasonGiven"), 
-            "descriptionGiven": request.get_json().get("descriptionGiven")
+            "descriptionGiven": request.get_json().get("descriptionGiven"),
+            "reportMatchedUser": request.get_json().get('reportMatchedUser')
         }
         response = requests.post(f"{cachingServerRoute}/reportprofilegate",
                                  data=json.dumps(request_data),
